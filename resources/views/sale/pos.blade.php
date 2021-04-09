@@ -2,7 +2,7 @@
 @if($errors->has('phone_number'))
 <div class="alert alert-danger alert-dismissible text-center">
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{ $errors->first('phone_number') }}</div>
-@endif 
+@endif
 @if(session()->has('message'))
     <div class="alert alert-success alert-dismissible text-center"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{!! session()->get('message') !!}</div> 
 @endif
@@ -218,7 +218,7 @@
           </li>
           @endif
           
-          <li><a href="#return" aria-expanded="false" data-toggle="collapse"> <i class="dripicons-archive"></i><span>{{trans('file.return')}}</span></a>
+          <li><a href="#return" aria-expanded="false" data-toggle="collapse"> <i class="dripicons-return"></i><span>{{trans('file.return')}}</span></a>
             <ul id="return" class="collapse list-unstyled ">
               <?php 
                 $index_permission = DB::table('permissions')->where('name', 'returns-index')->first();
@@ -808,7 +808,7 @@
                                     </div>
                                     <div class="col-md-12">
                                         <div class="search-box form-group">
-                                            <input type="text" name="product_code_name" id="lims_productcodeSearch" placeholder="Scan/Search product by name/code" class="form-control" autofocus />
+                                            <input type="text" name="product_code_name" id="lims_productcodeSearch" placeholder="Scan/Search product by name/code" class="form-control"  />
                                         </div>
                                     </div>
                                 </div>
@@ -994,7 +994,7 @@
                                         </div>
                                     </div>
                                     <div class="mt-3">
-                                        <button id="submit-btn" type="submit" class="btn btn-primary">{{trans('file.submit')}}</button>
+                                        <button id="submit-btn" type="button" class="btn btn-primary">{{trans('file.submit')}}</button>
                                     </div>
                                 </div>
                                 <div class="col-md-2 qc" data-initial="1">
@@ -1115,11 +1115,41 @@
                                 ])->first();
                             ?>
                             @if($pos_setting_permission_active)
-                            <li class="nav-item"><a class="dropdown-item" href="{{route('setting.pos')}}"><i class="dripicons-gear"></i>  <span>{{trans('file.POS Setting')}}</span></a> </li>
+                            <li class="nav-item"><a class="dropdown-item" href="{{route('setting.pos')}}" title="{{trans('file.POS Setting')}}"><i class="dripicons-gear"></i></a> </li>
                             @endif
-                            @if($alert_product > 0)
                             <li class="nav-item">
-                                  <a rel="nofollow" data-target="#" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link dropdown-item"><i class="dripicons-bell"></i><span class="badge badge-danger">{{$alert_product}}</span>
+                                <a href="{{route('sales.printLastReciept')}}" title="{{trans('file.Print Last Reciept')}}"><i class="dripicons-print"></i></a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="" id="register-details-btn" title="{{trans('file.Cash Register Details')}}"><i class="dripicons-briefcase"></i></a>
+                            </li>
+                            <?php
+                                $today_sale_permission = DB::table('permissions')->where('name', 'today_sale')->first();
+                                $today_sale_permission_active = DB::table('role_has_permissions')->where([
+                                            ['permission_id', $today_sale_permission->id],
+                                            ['role_id', Auth::user()->role_id]
+                                        ])->first();
+
+                                $today_profit_permission = DB::table('permissions')->where('name', 'today_profit')->first();
+                                $today_profit_permission_active = DB::table('role_has_permissions')->where([
+                                            ['permission_id', $today_profit_permission->id],
+                                            ['role_id', Auth::user()->role_id]
+                                        ])->first();
+                            ?>
+
+                            @if($today_sale_permission_active)
+                            <li class="nav-item">
+                                <a href="" id="today-sale-btn" title="{{trans('file.Today Sale')}}"><i class="dripicons-shopping-bag"></i></a>
+                            </li>
+                            @endif
+                            @if($today_profit_permission_active)
+                            <li class="nav-item">
+                                <a href="" id="today-profit-btn" title="{{trans('file.Today Profit')}}"><i class="dripicons-graph-line"></i></a>
+                            </li>
+                            @endif
+                            @if(($alert_product + count(\Auth::user()->unreadNotifications)) > 0)
+                            <li class="nav-item" id="notification-icon">
+                                  <a rel="nofollow" data-target="#" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link dropdown-item"><i class="dripicons-bell"></i><span class="badge badge-danger notification-number">{{$alert_product + count(\Auth::user()->unreadNotifications)}}</span>
                                       <span class="caret"></span>
                                       <span class="sr-only">Toggle Dropdown</span>
                                   </a>
@@ -1127,6 +1157,11 @@
                                       <li class="notifications">
                                         <a href="{{route('report.qtyAlert')}}" class="btn btn-link">{{$alert_product}} product exceeds alert quantity</a>
                                       </li>
+                                      @foreach(\Auth::user()->unreadNotifications as $key => $notification)
+                                          <li class="notifications">
+                                              <a href="#" class="btn btn-link">{{ $notification->data['message'] }}</a>
+                                          </li>
+                                      @endforeach
                                   </ul>
                             </li>
                             @endif
@@ -1181,7 +1216,11 @@
                         <div class="row ml-2 mt-3">
                             @foreach($lims_category_list as $category)
                             <div class="col-md-3 category-img text-center" data-category="{{$category->id}}">
-                                <img  src="{{url('public/images/product/zummXD2dvAtI.png')}}" />
+                                @if($category->image)
+                                    <img  src="{{url('public/images/category', $category->image)}}" />
+                                @else
+                                    <img  src="{{url('public/images/product/zummXD2dvAtI.png')}}" />
+                                @endif
                                 <p class="text-center">{{$category->name}}</p>
                             </div>
                             @endforeach
@@ -1350,7 +1389,8 @@
                         </div>
                         <div class="form-group">
                             <label>{{trans('file.name')}} *</strong> </label>
-                            <input type="text" name="name" required class="form-control">
+                            {{-- <input type="text"  name="name" required class="form-control"> --}}
+                            <input type="text"  name="customer_name"  required class="form-control">
                         </div>
                         <div class="form-group">
                             <label>{{trans('file.Email')}}</label>
@@ -1418,7 +1458,7 @@
                                       <td>
                                         <div class="btn-group">
                                             @if(in_array("sales-edit", $all_permission))
-                                            <a href="{{ route('sales.edit', ['id' => $sale->id]) }}" class="btn btn-success btn-sm" title="Edit"><i class="dripicons-document-edit"></i></a>&nbsp;
+                                            <a href="{{ route('sales.edit', $sale->id) }}" class="btn btn-success btn-sm" title="Edit"><i class="dripicons-document-edit"></i></a>&nbsp;
                                             @endif
                                             @if(in_array("sales-delete", $all_permission))
                                             {{ Form::open(['route' => ['sales.destroy', $sale->id], 'method' => 'DELETE'] ) }}
@@ -1476,6 +1516,219 @@
                   </div>
                 </div>
             </div>
+            <!-- add cash register modal -->
+            <div id="cash-register-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" class="modal fade text-left">
+                <div role="document" class="modal-dialog">
+                  <div class="modal-content">
+                    {!! Form::open(['route' => 'cashRegister.store', 'method' => 'post']) !!}
+                    <div class="modal-header">
+                      <h5 id="exampleModalLabel" class="modal-title">{{trans('file.Add Cash Register')}}</h5>
+                      <button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true"><i class="dripicons-cross"></i></span></button>
+                    </div>
+                    <div class="modal-body">
+                      <p class="italic"><small>{{trans('file.The field labels marked with * are required input fields')}}.</small></p>
+                        <div class="row">
+                          <div class="col-md-6 form-group warehouse-section">
+                              <label>{{trans('file.Warehouse')}} *</strong> </label>
+                              <select required name="warehouse_id" class="selectpicker form-control" data-live-search="true" data-live-search-style="begins" title="Select warehouse...">
+                                  @foreach($lims_warehouse_list as $warehouse)
+                                  <option value="{{$warehouse->id}}">{{$warehouse->name}}</option>
+                                  @endforeach
+                              </select>
+                          </div>
+                          <div class="col-md-6 form-group">
+                              <label>{{trans('file.Cash in Hand')}} *</strong> </label>
+                              <input type="number" name="cash_in_hand" required class="form-control">
+                          </div>
+                          <div class="col-md-12 form-group">
+                              <button type="submit" class="btn btn-primary">{{trans('file.submit')}}</button>
+                          </div>
+                        </div>
+                    </div>
+                    {{ Form::close() }}
+                  </div>
+                </div>
+            </div>
+            <!-- cash register details modal -->
+            <div id="register-details-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" class="modal fade text-left">
+                <div role="document" class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 id="exampleModalLabel" class="modal-title">{{trans('file.Cash Register Details')}}</h5>
+                      <button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true"><i class="dripicons-cross"></i></span></button>
+                    </div>
+                    <div class="modal-body">
+                      <p>{{trans('file.Please review the transaction and payments.')}}</p>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <table class="table table-hover">
+                                    <tbody>
+                                        <tr>
+                                          <td>{{trans('file.Cash in Hand')}}:</td>
+                                          <td id="cash_in_hand" class="text-right">0</td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Total Sale Amount')}}:</td>
+                                          <td id="total_sale_amount" class="text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Total Payment')}}:</td>
+                                          <td id="total_payment" class="text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Cash Payment')}}:</td>
+                                          <td id="cash_payment" class="text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Credit Card Payment')}}:</td>
+                                          <td id="credit_card_payment" class="text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Cheque Payment')}}:</td>
+                                          <td id="cheque_payment" class="text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Gift Card Payment')}}:</td>
+                                          <td id="gift_card_payment" class="text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Paypal Payment')}}:</td>
+                                          <td id="paypal_payment" class="text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Total Sale Return')}}:</td>
+                                          <td id="total_sale_return" class="text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Total Expense')}}:</td>
+                                          <td id="total_expense" class="text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td><strong>{{trans('file.Total Cash')}}:</strong></td>
+                                          <td id="total_cash" class="text-right"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6" id="closing-section">
+                              <form action="{{route('cashRegister.close')}}" method="POST">
+                                  @csrf
+                                  <input type="hidden" name="cash_register_id">
+                                  <button type="submit" class="btn btn-primary">{{trans('file.Close Register')}}</button>
+                              </form>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            <!-- today sale modal -->
+            <div id="today-sale-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" class="modal fade text-left">
+                <div role="document" class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 id="exampleModalLabel" class="modal-title">{{trans('file.Today Sale')}}</h5>
+                      <button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true"><i class="dripicons-cross"></i></span></button>
+                    </div>
+                    <div class="modal-body">
+                      <p>{{trans('file.Please review the transaction and payments.')}}</p>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <table class="table table-hover">
+                                    <tbody>
+                                        <tr>
+                                          <td>{{trans('file.Total Sale Amount')}}:</td>
+                                          <td class="total_sale_amount text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Cash Payment')}}:</td>
+                                          <td class="cash_payment text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Credit Card Payment')}}:</td>
+                                          <td class="credit_card_payment text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Cheque Payment')}}:</td>
+                                          <td class="cheque_payment text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Gift Card Payment')}}:</td>
+                                          <td class="gift_card_payment text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Paypal Payment')}}:</td>
+                                          <td class="paypal_payment text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Total Payment')}}:</td>
+                                          <td class="total_payment text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Total Sale Return')}}:</td>
+                                          <td class="total_sale_return text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Total Expense')}}:</td>
+                                          <td class="total_expense text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td><strong>{{trans('file.Total Cash')}}:</strong></td>
+                                          <td class="total_cash text-right"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            <!-- today profit modal -->
+            <div id="today-profit-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" class="modal fade text-left">
+                <div role="document" class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 id="exampleModalLabel" class="modal-title">{{trans('file.Today Profit')}}</h5>
+                      <button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true"><i class="dripicons-cross"></i></span></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <select required name="warehouseId" class="form-control">
+                                    <option value="0">{{trans('file.All Warehouse')}}</option>
+                                    @foreach($lims_warehouse_list as $warehouse)
+                                    <option value="{{$warehouse->id}}">{{$warehouse->name}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-12 mt-2">
+                                <table class="table table-hover">
+                                    <tbody>
+                                        <tr>
+                                          <td>{{trans('file.Product Revenue')}}:</td>
+                                          <td class="product_revenue text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Product Cost')}}:</td>
+                                          <td class="product_cost text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td>{{trans('file.Expense')}}:</td>
+                                          <td class="expense_amount text-right"></td>
+                                        </tr>
+                                        <tr>
+                                          <td><strong>{{trans('file.Profit')}}:</strong></td>
+                                          <td class="profit text-right"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -1487,6 +1740,8 @@
     $("ul#sale #sale-pos-menu").addClass("active");
 
     var public_key = <?php echo json_encode($lims_pos_setting_data->stripe_public_key) ?>;
+    var alert_product = <?php echo json_encode($alert_product) ?>;
+    var currency = <?php echo json_encode($currency) ?>;
     var valid;
 
 // array data depend on warehouse
@@ -1527,7 +1782,7 @@ var role_id = <?php echo json_encode(\Auth::user()->role_id) ?>;
 var warehouse_id = <?php echo json_encode(\Auth::user()->warehouse_id) ?>;
 var biller_id = <?php echo json_encode(\Auth::user()->biller_id) ?>;
 var coupon_list = <?php echo json_encode($lims_coupon_list) ?>;
-var currency = <?php echo json_encode($general_setting->currency) ?>;
+var currency = <?php echo json_encode($currency) ?>;
 
 $('.selectpicker').selectpicker({
 	style: 'btn-link',
@@ -1624,13 +1879,88 @@ if(keyboard_active==1){
     });
 }
 
+  $("li#notification-icon").on("click", function (argument) {
+      $.get('notifications/mark-as-read', function(data) {
+          $("span.notification-number").text(alert_product);
+      });
+  });
+
+  $("#register-details-btn").on("click", function (e) {
+      e.preventDefault();
+      $.ajax({
+          url: 'cash-register/showDetails/'+warehouse_id,
+          type: "GET",
+          success:function(data) {
+              $('#register-details-modal #cash_in_hand').text(data['cash_in_hand']);
+              $('#register-details-modal #total_sale_amount').text(data['total_sale_amount']);
+              $('#register-details-modal #total_payment').text(data['total_payment']);
+              $('#register-details-modal #cash_payment').text(data['cash_payment']);
+              $('#register-details-modal #credit_card_payment').text(data['credit_card_payment']);
+              $('#register-details-modal #cheque_payment').text(data['cheque_payment']);
+              $('#register-details-modal #gift_card_payment').text(data['gift_card_payment']);
+              $('#register-details-modal #paypal_payment').text(data['paypal_payment']);
+              $('#register-details-modal #total_sale_return').text(data['total_sale_return']);
+              $('#register-details-modal #total_expense').text(data['total_expense']);
+              $('#register-details-modal #total_cash').text(data['total_cash']);
+              $('#register-details-modal input[name=cash_register_id]').val(data['id']);
+          }
+      });
+      $('#register-details-modal').modal('show');
+  });
+
+  $("#today-sale-btn").on("click", function (e) {
+      e.preventDefault();
+      $.ajax({
+          url: 'sales/today-sale/',
+          type: "GET",
+          success:function(data) {
+              $('#today-sale-modal .total_sale_amount').text(data['total_sale_amount']);
+              $('#today-sale-modal .total_payment').text(data['total_payment']);
+              $('#today-sale-modal .cash_payment').text(data['cash_payment']);
+              $('#today-sale-modal .credit_card_payment').text(data['credit_card_payment']);
+              $('#today-sale-modal .cheque_payment').text(data['cheque_payment']);
+              $('#today-sale-modal .gift_card_payment').text(data['gift_card_payment']);
+              $('#today-sale-modal .paypal_payment').text(data['paypal_payment']);
+              $('#today-sale-modal .total_sale_return').text(data['total_sale_return']);
+              $('#today-sale-modal .total_expense').text(data['total_expense']);
+              $('#today-sale-modal .total_cash').text(data['total_cash']);
+          }
+      });
+      $('#today-sale-modal').modal('show');
+  });
+
+  $("#today-profit-btn").on("click", function (e) {
+      e.preventDefault();
+      calculateTodayProfit(0);
+  });
+
+  $("#today-profit-modal select[name=warehouseId]").on("change", function() {
+      calculateTodayProfit($(this).val());
+  });
+
+  function calculateTodayProfit(warehouse_id) {
+      $.ajax({
+            url: 'sales/today-profit/' + warehouse_id,
+            type: "GET",
+            success:function(data) {
+                $('#today-profit-modal .product_revenue').text(data['product_revenue']);
+                $('#today-profit-modal .product_cost').text(data['product_cost']);
+                $('#today-profit-modal .expense_amount').text(data['expense_amount']);
+                $('#today-profit-modal .profit').text(data['profit']);
+            }
+        });
+      $('#today-profit-modal').modal('show');
+  }
+
 if(role_id > 2){
     $('#biller_id').addClass('d-none');
     $('#warehouse_id').addClass('d-none');
     $('select[name=warehouse_id]').val(warehouse_id);
     $('select[name=biller_id]').val(biller_id);
+    isCashRegisterAvailable(warehouse_id);
 }
 else{
+    warehouse_id = $("input[name='warehouse_id_hidden']").val();
     $('select[name=warehouse_id]').val($("input[name='warehouse_id_hidden']").val());
     $('select[name=biller_id]').val($("input[name='biller_id_hidden']").val());
 }
@@ -1653,10 +1983,36 @@ $.get('sales/getproduct/' + id, function(data) {
     product_id = data[4];
     product_list = data[5];
     qty_list = data[6];
+    product_warehouse_price = data[7];
     $.each(product_code, function(index) {
         lims_product_array.push(product_code[index] + ' (' + product_name[index] + ')');
     });
 });
+
+isCashRegisterAvailable(id);
+
+function isCashRegisterAvailable(warehouse_id) {
+    $.ajax({
+        url: 'cash-register/check-availability/'+warehouse_id,
+        type: "GET",
+        success:function(data) {
+            if(data == 'false') {
+              $("#register-details-btn").addClass('d-none');
+              $('#cash-register-modal select[name=warehouse_id]').val(warehouse_id);
+
+              if(role_id <= 2)
+                $("#cash-register-modal .warehouse-section").removeClass('d-none');
+              else
+                $("#cash-register-modal .warehouse-section").addClass('d-none');
+
+              $('.selectpicker').selectpicker('refresh');
+              $("#cash-register-modal").modal('show');
+            }
+            else
+              $("#register-details-btn").removeClass('d-none');
+        }
+    });
+}
 
 if(keyboard_active==1){
     $('#lims_productcodeSearch').bind('keyboardChange', function (e, keyboard, el) {
@@ -1795,8 +2151,8 @@ $('select[name="customer_id"]').on('change', function() {
 });
 
 $('select[name="warehouse_id"]').on('change', function() {
-    var id = $(this).val();
-    $.get('sales/getproduct/' + id, function(data) {
+    warehouse_id = $(this).val();
+    $.get('sales/getproduct/' + warehouse_id, function(data) {
         lims_product_array = [];
         product_code = data[0];
         product_name = data[1];
@@ -1806,6 +2162,8 @@ $('select[name="warehouse_id"]').on('change', function() {
             lims_product_array.push(product_code[index] + ' (' + product_name[index] + ')');
         });
     });
+
+    isCashRegisterAvailable(warehouse_id);
 });
 
 var lims_productcodeSearch = $('#lims_productcodeSearch');
@@ -1827,7 +2185,7 @@ lims_productcodeSearch.autocomplete({
     select: function(event, ui) {
         var data = ui.item.value;
         productSearch(data);
-    }
+    },
 });
 
 $('#myTable').keyboard({
@@ -1838,7 +2196,13 @@ $('#myTable').keyboard({
 
 $("#myTable").on('click', '.plus', function() {
     rowindex = $(this).closest('tr').index();
-    var qty = parseFloat($('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val()) + 1;
+    var qty = $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val();
+
+    if(!qty)
+      qty = 1;
+    else
+      qty = parseFloat(qty) + 1;
+
     $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val(qty);
     checkQuantity(String(qty), true);
 });
@@ -1857,6 +2221,10 @@ $("#myTable").on('click', '.minus', function() {
 //Change quantity
 $("#myTable").on('input', '.qty', function() {
     rowindex = $(this).closest('tr').index();
+    if($(this).val() < 1 && $(this).val() != '') {
+      $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val(1);
+      alert("Quantity can't be less than 1");
+    }
     checkQuantity($(this).val(), true);
 });
 
@@ -1921,6 +2289,12 @@ $('button[name="update_btn"]').on("click", function() {
         return;
     }
 
+    if(edit_qty < 1) {
+        $('input[name="edit_qty"]').val(1);
+        edit_qty = 1;
+        alert("Quantity can't be less than 1");
+    }
+    
     var tax_rate_all = <?php echo json_encode($tax_rate_all) ?>;
 
     tax_rate[rowindex] = parseFloat(tax_rate_all[$('select[name="edit_tax_rate"]').val()]);
@@ -1990,6 +2364,10 @@ $("#draft-btn").on("click",function(){
     }
     else
         $('.payment-form').submit();
+});
+
+$("#submit-btn").on("click", function() {
+    $('.payment-form').submit();
 });
 
 $("#gift-card-btn").on("click",function() {
@@ -2175,7 +2553,7 @@ function addNewProduct(data){
     var newRow = $("<tr>");
     var cols = '';
     temp_unit_name = (data[6]).split(',');
-    cols += '<td class="col-sm-4 product-title"><button type="button" class="edit-product btn btn-link" data-toggle="modal" data-target="#editModal"><strong>' + data[0] + '</strong></button> [' + data[1] + '] </td>';
+    cols += '<td class="col-sm-4 product-title"><button type="button" class="edit-product btn btn-link" data-toggle="modal" data-target="#editModal"><strong>' + data[0] + '</strong></button> [' + data[1] + '] <p>In Stock: <span class="in-stock"></span></p></td>';
     cols += '<td class="col-sm-2 product-price"></td>';
     cols += '<td class="col-sm-3"><div class="input-group"><span class="input-group-btn"><button type="button" class="btn btn-default minus"><span class="dripicons-minus"></span></button></span><input type="text" name="qty[]" class="form-control qty numkey input-number" value="1" step="any" required><span class="input-group-btn"><button type="button" class="btn btn-default plus"><span class="dripicons-plus"></span></button></span></div></td>';
     cols += '<td class="col-sm-2 sub-total"></td>';
@@ -2197,7 +2575,13 @@ function addNewProduct(data){
     else
         $("table.order-list tbody").append(newRow);
 
-    product_price.push(parseFloat(data[2]) + parseFloat(data[2] * customer_group_rate));
+    pos = product_code.indexOf(data[1]);
+    if(!data[11] && product_warehouse_price[pos]) {
+        product_price.push(parseFloat(product_warehouse_price[pos] * currency['exchange_rate']) + parseFloat(product_warehouse_price[pos] * currency['exchange_rate'] * customer_group_rate));
+    }
+    else {
+        product_price.push(parseFloat(data[2] * currency['exchange_rate']) + parseFloat(data[2] * currency['exchange_rate'] * customer_group_rate));
+    }
     product_discount.push('0.00');
     tax_rate.push(parseFloat(data[3]));
     tax_name.push(data[4]);
@@ -2304,6 +2688,7 @@ function couponDiscount() {
 function checkQuantity(sale_qty, flag) {
     var row_product_code = $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ')').find('.product-code').val();
     pos = product_code.indexOf(row_product_code);
+    $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ')').find('.in-stock').text(product_qty[pos]);
     if(product_type[pos] == 'standard'){
         var operator = unit_operator[rowindex].split(',');
         var operation_value = unit_operation_value[rowindex].split(',');

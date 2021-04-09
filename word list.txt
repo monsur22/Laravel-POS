@@ -540,3 +540,46 @@ Variant
 Warehouse Quantity
 Warehouse quantity of product variants
 Thank you for shopping with us. Please come again
+Money Transfer
+Add Money Transfer
+From Account
+To Account
+Update Money Transfer
+Stock Quantity
+Stock Worth (Price/Cost)
+Number of Product
+Add Cash Register
+Cash Register Details
+Please review the transaction and payments.
+Total Sale Amount
+Total Sale Return
+Total Payment
+Cash Payment
+Credit Card Payment
+Gift Card Payment
+Cheque Payment
+Paypal Payment
+Total Expense
+Total Cash
+Cash Register List
+Closed
+Close Register
+Opened at
+Closed at
+Delivery Details
+Print Last Reciept
+Today Sale
+Today Profit
+Product Revenue
+Profit
+Full Screen
+Send Notification
+Add Currency
+Update Currency
+Currency Name
+Currency Code
+Exchange Rate
+System Title
+System Logo
+This product has different price for different warehouse
+Backup Database

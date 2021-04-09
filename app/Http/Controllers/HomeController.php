@@ -13,6 +13,7 @@ use App\Quotation;
 use App\Payment;
 use App\Account;
 use App\Product_Sale;
+use App\Customer;
 use DB;
 use Auth;
 
@@ -29,9 +30,15 @@ class HomeController extends Controller
     }
 
     public function index()
-    { 
+    {
+        if(Auth::user()->role_id == 5) {
+            $customer = Customer::select('id')->where('user_id', Auth::id())->first();
+            $lims_sale_data = Sale::with('warehouse')->where('customer_id', $customer->id)->orderBy('created_at', 'desc')->get();
+            return view('customer_index', compact('lims_sale_data'));
+        }
+
         $start_date = date("Y").'-'.date("m").'-'.'01';
-        $end_date = date("Y").'-'.date("m").'-'.'31';
+        $end_date = date("Y").'-'.date("m").'-'.date('t', mktime(0, 0, 0, date("m"), 1, date("Y")));
         $yearly_sale_amount = [];
 
         $general_setting = DB::table('general_settings')->latest()->first();
@@ -70,7 +77,7 @@ class HomeController extends Controller
 
         //cash flow of last 6 months
         $start = strtotime(date('Y-m-01', strtotime('-6 month', strtotime(date('Y-m-d') ))));
-        $end = strtotime(date('Y-m-31'));
+        $end = strtotime(date('Y-m-'.date('t', mktime(0, 0, 0, date("m"), 1, date("Y")))));
 
         while($start < $end)
         {
@@ -159,7 +166,7 @@ class HomeController extends Controller
     public function myTransaction($year, $month)
     {
         $start = 1;
-        $number_of_day = cal_days_in_month(CAL_GREGORIAN,$month,$year);
+        $number_of_day = date('t', mktime(0, 0, 0, $month, 1, $year));
         while($start <= $number_of_day)
         {
             if($start < 10)

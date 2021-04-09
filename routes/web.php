@@ -115,11 +115,16 @@ Route::group(['middleware' => ['auth', 'active']], function() {
 	Route::post('sales/deletepayment', 'SaleController@deletePayment')->name('sale.delete-payment');
 	Route::get('sales/{id}/create', 'SaleController@createSale');
 	Route::post('sales/deletebyselection', 'SaleController@deleteBySelection');
+	Route::get('sales/print-last-reciept', 'SaleController@printLastReciept')->name('sales.printLastReciept');
+	Route::get('sales/today-sale', 'SaleController@todaySale');
+	Route::get('sales/today-profit/{warehouse_id}', 'SaleController@todayProfit');
 	Route::resource('sales', 'SaleController');
 
 	Route::get('delivery', 'DeliveryController@index')->name('delivery.index');
+	Route::get('delivery/product_delivery/{id}','DeliveryController@productDeliveryData');
 	Route::get('delivery/create/{id}', 'DeliveryController@create');
 	Route::post('delivery/store', 'DeliveryController@store')->name('delivery.store');
+	Route::post('delivery/sendmail', 'DeliveryController@sendMail')->name('delivery.sendMail');
 	Route::get('delivery/{id}/edit', 'DeliveryController@edit');
 	Route::post('delivery/update', 'DeliveryController@update')->name('delivery.update');
 	Route::post('delivery/deletebyselection', 'DeliveryController@deleteBySelection');
@@ -209,6 +214,7 @@ Route::group(['middleware' => ['auth', 'active']], function() {
 
 	Route::get('setting/general_setting', 'SettingController@generalSetting')->name('setting.general');
 	Route::post('setting/general_setting_store', 'SettingController@generalSettingStore')->name('setting.generalStore');
+	Route::get('backup', 'SettingController@backup')->name('setting.backup');
 	Route::get('setting/general_setting/change-theme/{theme}', 'SettingController@changeTheme');
 	Route::get('setting/mail_setting', 'SettingController@mailSetting')->name('setting.mail');
 	Route::get('setting/sms_setting', 'SettingController@smsSetting')->name('setting.sms');
@@ -266,6 +272,18 @@ Route::group(['middleware' => ['auth', 'active']], function() {
 	Route::get('approve-holiday/{id}', 'HolidayController@approveHoliday')->name('approveHoliday');
 	Route::get('holidays/my-holiday/{year}/{month}', 'HolidayController@myHoliday')->name('myHoliday');
 	Route::resource('holidays', 'HolidayController');
+
+	Route::get('cash-register', 'CashRegisterController@index')->name('cashRegister.index');
+	Route::get('cash-register/check-availability/{warehouse_id}', 'CashRegisterController@checkAvailability')->name('cashRegister.checkAvailability');
+	Route::post('cash-register/store', 'CashRegisterController@store')->name('cashRegister.store');
+	Route::get('cash-register/getDetails/{id}', 'CashRegisterController@getDetails');
+	Route::get('cash-register/showDetails/{warehouse_id}', 'CashRegisterController@showDetails');
+	Route::post('cash-register/close', 'CashRegisterController@close')->name('cashRegister.close');
+
+	Route::post('notifications/store', 'NotificationController@store')->name('notifications.store');
+	Route::get('notifications/mark-as-read', 'NotificationController@markAsRead');
+
+	Route::resource('currency', 'CurrencyController');
 
 	Route::get('/home', 'HomeController@index')->name('home');
 	Route::get('my-transactions/{year}/{month}', 'HomeController@myTransaction');

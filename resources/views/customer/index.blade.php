@@ -59,7 +59,7 @@
                             <ul class="dropdown-menu edit-options dropdown-menu-right dropdown-default" user="menu">
                                 @if(in_array("customers-edit", $all_permission))
                                 <li> 
-                                    <a href="{{ route('customer.edit', ['id' => $customer->id]) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a>
+                                    <a href="{{ route('customer.edit', $customer->id) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a>
                                 </li>
                                 @endif
                                 <li>

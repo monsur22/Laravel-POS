@@ -226,20 +226,85 @@
                                         <label>{{trans('file.Featured')}}</label>
                                     </div>
                                 </div>
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label>{{trans('file.Product Image')}}</strong> </label> <i class="dripicons-question" data-toggle="tooltip" title="{{trans('file.You can upload multiple image. Only .jpeg, .jpg, .png, .gif file can be uploaded. First image will be base image.')}}"></i>
                                         <div id="imageUpload" class="dropzone"></div>
                                         <span class="validation-msg" id="image-error"></span>
                                     </div>
-                                </div> 
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th><button type="button" class="btn btn-sm"><i class="fa fa-trash"></i></button></th>
+                                                    <th>Image</th>
+                                                    <th>Remove</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php $images = explode(",", $lims_product_data->image)?>
+                                                @foreach($images as $key => $image)
+                                                <tr>
+                                                    <td><button type="button" class="btn btn-sm"><i class="fa fa-trash"></i></button></i></td>
+                                                    <td>
+                                                        <img src="{{url('public/images/product', $image)}}" height="60" width="60">
+                                                        <input type="hidden" name="prev_img[]" value="{{$image}}">
+                                                    </td>
+                                                    <td><button type="button" class="btn btn-sm btn-danger remove-img">X</button></td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                                 <div class="col-md-12"> 
                                     <div class="form-group">
                                         <label>{{trans('file.Product Details')}}</label>
                                         <textarea name="product_details" class="form-control" rows="5">{{str_replace('@', '"', $lims_product_data->product_details)}}</textarea>
                                     </div>
                                 </div>
-                                <div class="col-md-12" id="variant-option">
+                                <div class="col-md-12 mt-2" id="diffPrice-option">
+                                    @if($lims_product_data->is_diffPrice)
+                                        <h5><input name="is_diffPrice" type="checkbox" id="is-diffPrice" value="1" checked>&nbsp; {{trans('file.This product has different price for different warehouse')}}</h5>
+                                    @else
+                                        <h5><input name="is_diffPrice" type="checkbox" id="is-diffPrice" value="1">&nbsp; {{trans('file.This product has different price for different warehouse')}}</h5>
+                                    @endif
+                                </div>
+                                <div class="col-md-6" id="diffPrice-section">
+                                    <div class="table-responsive ml-2">
+                                        <table id="diffPrice-table" class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>{{trans('file.Warehouse')}}</th>
+                                                    <th>{{trans('file.Price')}}</th>
+                                                </tr>
+                                                @foreach($lims_warehouse_list as $warehouse)
+                                                <tr>
+                                                    <td>
+                                                        <input type="hidden" name="warehouse_id[]" value="{{$warehouse->id}}">
+                                                        {{$warehouse->name}}
+                                                    </td>
+                                                    <td>
+                                                        <?php 
+                                                            $product_warehouse = \App\Product_Warehouse::FindProductWithoutVariant($lims_product_data->id, $warehouse->id)->first();
+                                                        ?>
+                                                        @if($product_warehouse)
+                                                            <input type="number" name="diff_price[]" class="form-control" value="{{$product_warehouse->price}}">
+                                                        @else
+                                                            <input type="number" name="diff_price[]" class="form-control">
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mt-3" id="variant-option">
                                     @if($lims_product_data->is_variant)
                                     <h5><input name="is_variant" type="checkbox" id="is-variant" value="1" checked>&nbsp; {{trans('file.This product has variant')}}</h5>
                                     @else
@@ -325,10 +390,15 @@
     var product_id = <?php echo json_encode($lims_product_data->id) ?>;
     $('[data-toggle="tooltip"]').tooltip();
 
+    $(".remove-img").on("click", function () {
+        $(this).closest("tr").remove();
+    });
+
     $("#digital").hide();
     $("#combo").hide();
     $("select[name='type']").val($("input[name='type_hidden']").val());
     variantShowHide();
+    diffPriceShowHide();
 
     if($("input[name='type_hidden']").val() == "digital"){
         $("input[name='cost']").prop('required',false);
@@ -413,7 +483,7 @@
             $("select[name='unit_id']").prop('required',false);
             hide();
             $("#digital").hide();
-            $("#variant-section, #variant-option").hide(300);
+            $("#variant-section, #variant-option, #diffPrice-option, #diffPrice-section").hide(300);
             $("#combo").show();
             $("input[name='price']").prop('disabled',true);
         }
@@ -424,7 +494,7 @@
             hide();
             $("#combo").hide();
             $("#digital").show();
-            $("#variant-section, #variant-option").hide(300);
+            $("#variant-section, #variant-option, #diffPrice-option, #diffPrice-section").hide(300);
             $("input[name='price']").prop('disabled',false);
         }
         else if($(this).val() == 'standard'){
@@ -435,6 +505,7 @@
             $("#unit").show();
             $("#alert-qty").show();
             $("#variant-option").show(300);
+            $("#diffPrice-option").show(300);
             $("#digital").hide();
             $("#combo").hide();
             $("input[name='price']").prop('disabled',false);
@@ -453,7 +524,7 @@
 
     var lims_product_code = [ @foreach($lims_product_list as $product)
         <?php
-            $productArray[] = $product->code . ' [ ' . $product->name . ' ]';
+            $productArray[] = htmlspecialchars($product->code . ' [ ' . $product->name . ' ]');
         ?>
          @endforeach
             <?php
@@ -576,6 +647,10 @@
         variantShowHide();
     });
 
+    $("input[name='is_diffPrice']").on("change", function () {
+        diffPriceShowHide();
+    });
+
     $("input[name='variant']").on("input", function () {
         if($("#code").val() == ''){
             $("input[name='variant']").val('');
@@ -609,6 +684,15 @@
         }
         else {
             $("#variant-section").hide(300);
+        }
+    };
+
+    function diffPriceShowHide() {
+         if ($("#is-diffPrice").is(':checked')) {
+            $("#diffPrice-section").show(300);
+        }
+        else {
+            $("#diffPrice-section").hide(300);
         }
     };
 

@@ -8,14 +8,13 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="all,follow">
+    <link rel="icon" type="image/png" href="{{url('public/logo', $general_setting->site_logo)}}" />
     <!-- Bootstrap CSS-->
     <link rel="stylesheet" href="<?php echo asset('public/vendor/bootstrap/css/bootstrap.min.css') ?>" type="text/css">
     <link rel="stylesheet" href="<?php echo asset('public/vendor/bootstrap/css/bootstrap-datepicker.min.css') ?>" type="text/css">
     <link rel="stylesheet" href="<?php echo asset('public/vendor/bootstrap/css/bootstrap-select.min.css') ?>" type="text/css">
     <!-- Font Awesome CSS-->
     <link rel="stylesheet" href="<?php echo asset('public/vendor/font-awesome/css/font-awesome.min.css') ?>" type="text/css">
-    <!-- Fontastic Custom icon font-->
-    <link rel="stylesheet" href="<?php echo asset('public/css/fontastic.css') ?>" type="text/css">
     <!-- Google fonts - Roboto -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
     <!-- jQuery Circle-->
@@ -26,15 +25,12 @@
     <link rel="stylesheet" href="<?php echo asset('public/css/style.default.css') ?>" id="theme-stylesheet" type="text/css">
     <!-- Custom stylesheet - for your changes-->
     <link rel="stylesheet" href="<?php echo asset('public/css/custom-'.$general_setting->theme) ?>" type="text/css">
-    <!-- Favicon-->
-    <link rel="shortcut icon" href="img/favicon.ico">
     <!-- Tweaks for older IEs--><!--[if lt IE 9]>
         <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
         <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script><![endif]-->
 
     <script type="text/javascript" src="<?php echo asset('public/vendor/jquery/jquery.min.js') ?>"></script>
 <script type="text/javascript" src="<?php echo asset('public/vendor/jquery/jquery-ui.min.js') ?>"></script>
-<script type="text/javascript" src="<?php echo asset('public/vendor/jquery/bootstrap-datepicker.min.js') ?>"></script>
 <script type="text/javascript" src="<?php echo asset('public/vendor/popper.js/umd/popper.min.js') ?>">
 </script>
 <script type="text/javascript" src="<?php echo asset('public/vendor/bootstrap/js/bootstrap.min.js') ?>"></script>
@@ -42,10 +38,8 @@
 <script type="text/javascript" src="<?php echo asset('public/js/grasp_mobile_progress_circle-1.0.0.min.js') ?>"></script>
 <script type="text/javascript" src="<?php echo asset('public/vendor/jquery.cookie/jquery.cookie.js') ?>">
 </script>
-<script type="text/javascript" src="<?php echo asset('public/vendor/chart.js/Chart.min.js') ?>"></script>
 <script type="text/javascript" src="<?php echo asset('public/vendor/jquery-validation/jquery.validate.min.js') ?>"></script>
 <script type="text/javascript" src="<?php echo asset('public/vendor/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js')?>"></script>
-<script type="text/javascript" src="<?php echo asset('public/js/charts-home.js') ?>"></script>
 <script type="text/javascript" src="<?php echo asset('public/js/front.js') ?>"></script>
   </head>
   <body>
@@ -75,7 +69,7 @@
                 @endif
               </div>
               <div class="form-group-material">
-                <input id="register-phone" type="text" name="phone" required class="input-material">
+                <input id="register-phone" type="text" name="phone_number" required class="input-material">
                 <label for="register-phone" class="label-material">{{trans('file.Phone Number')}} *</label>
               </div>
               <div class="form-group-material">
@@ -83,21 +77,58 @@
                 <label for="register-company" class="label-material">{{trans('file.Company Name')}}</label>
               </div>
               <div class="form-group-material">
-                <select name="role_id" required class="selectpicker form-control" data-live-search="true" data-live-search-style="begins" title="Select Role...">
+                <select name="role_id" id="role-id" required class="selectpicker form-control" data-live-search="true" data-live-search-style="begins" title="Select Role...">
                   @foreach($lims_role_list as $role)
                       <option value="{{$role->id}}">{{$role->name}}</option>
                   @endforeach
                 </select>
               </div>
+              <div id="customer-section">
+                  <div class="form-group-material">
+                    <input id="customer-name" type="text" name="customer_name" class="input-material customer-field">
+                    <label for="customer-name" class="label-material">{{trans('file.name')}} *</label>
+                  </div>
+                  <div class="form-group-material">
+                    <select name="customer_group_id" required class="selectpicker form-control customer-field" data-live-search="true" data-live-search-style="begins" title="Select customer group...">
+                      @foreach($lims_customer_group_list as $customer_group)
+                          <option value="{{$customer_group->id}}">{{$customer_group->name}}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <div class="form-group-material">
+                    <input id="customer-tax-number" type="text" name="tax_no" class="input-material">
+                    <label for="customer-tax-number" class="label-material">{{trans('file.Tax Number')}}</label>
+                  </div>
+                  <div class="form-group-material">
+                    <input id="customer-address" type="text" name="address" class="input-material customer-field">
+                    <label for="customer-address" class="label-material">{{trans('file.Address')}} *</label>
+                  </div>
+                  <div class="form-group-material">
+                    <input id="customer-city" type="text" name="city" class="input-material customer-field">
+                    <label for="customer-city" class="label-material">{{trans('file.City')}} *</label>
+                  </div>
+                  <div class="form-group-material">
+                    <input id="customer-state" type="text" name="state" class="input-material">
+                    <label for="customer-state" class="label-material">{{trans('file.State')}}</label>
+                  </div>
+                  <div class="form-group-material">
+                    <input id="customer-postal" type="text" name="postal_code" class="input-material">
+                    <label for="customer-postal" class="label-material">{{trans('file.Postal Code')}}</label>
+                  </div>
+                  <div class="form-group-material">
+                    <input id="customer-country" type="text" name="country" class="input-material">
+                    <label for="customer-country" class="label-material">{{trans('file.Country')}}</label>
+                  </div>
+              </div>
               <div class="form-group-material" id="biller-id">
-                <select name="biller_id" required class="selectpicker form-control" data-live-search="true" data-live-search-style="begins" title="Select Biller*...">
+                <select name="biller_id" class="selectpicker form-control" data-live-search="true" data-live-search-style="begins" title="Select Biller*...">
                   @foreach($lims_biller_list as $biller)
                       <option value="{{$biller->id}}">{{$biller->name}} ({{$biller->phone_number}})</option>
                   @endforeach
                 </select>
               </div>
               <div class="form-group-material" id="warehouse-id">
-                <select name="warehouse_id" required class="selectpicker form-control" data-live-search="true" data-live-search-style="begins" title="Select Warehouse*...">
+                <select name="warehouse_id" class="selectpicker form-control" data-live-search="true" data-live-search-style="begins" title="Select Warehouse*...">
                   @foreach($lims_warehouse_list as $warehouse)
                       <option value="{{$warehouse->id}}">{{$warehouse->name}}</option>
                   @endforeach
@@ -127,26 +158,56 @@
     // Material Inputs
     // ------------------------------------------------------ //
 
-    var materialInputs = $('input.input-material');
+        var materialInputs = $('input.input-material');
 
-    // activate labels for prefilled values
-    materialInputs.filter(function() { return $(this).val() !== ""; }).siblings('.label-material').addClass('active');
+        // activate labels for prefilled values
+        materialInputs.filter(function() { return $(this).val() !== ""; }).siblings('.label-material').addClass('active');
 
-    // move label on focus
-    materialInputs.on('focus', function () {
-        $(this).siblings('.label-material').addClass('active');
-    });
-
-    // remove/keep label on blur
-    materialInputs.on('blur', function () {
-        $(this).siblings('.label-material').removeClass('active');
-
-        if ($(this).val() !== '') {
+        // move label on focus
+        materialInputs.on('focus', function () {
             $(this).siblings('.label-material').addClass('active');
-        } else {
+        });
+
+        // remove/keep label on blur
+        materialInputs.on('blur', function () {
             $(this).siblings('.label-material').removeClass('active');
-        }
-    });
+
+            if ($(this).val() !== '') {
+                $(this).siblings('.label-material').addClass('active');
+            } else {
+                $(this).siblings('.label-material').removeClass('active');
+            }
+        });
+        $("#biller-id").hide();
+        $("#warehouse-id").hide();
+        $("#customer-section").hide();
+
+        $("#role-id").on("change", function () {
+            if($(this).val() == '5') {
+              $("#customer-section").show(300);
+              $(".customer-field").prop('required', true);
+              $("#biller-id").hide(300);
+              $("#warehouse-id").hide(300);
+              $("select[name='biller_id']").prop('required', false);
+              $("select[name='warehouse_id']").prop('required', false);
+            }
+            else if($(this).val() > 2) {
+              $("#customer-section").hide(300);
+              $("#biller-id").show(300);
+              $("#warehouse-id").show(300);
+              $("select[name='biller_id']").prop('required', true);
+              $("select[name='warehouse_id']").prop('required', true);
+              $(".customer-field").prop('required', false);
+            }
+            else {
+              $("#biller-id").hide(300);
+              $("#warehouse-id").hide(300);
+              $("#customer-section").hide(300);
+              $("select[name='biller_id']").prop('required', false);
+              $("select[name='warehouse_id']").prop('required', false);
+              $(".customer-field").prop('required', false);
+            }
+        });
     </script>
   </body>
 </html>

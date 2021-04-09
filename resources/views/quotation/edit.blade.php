@@ -417,6 +417,7 @@ var rowindex;
 var customer_group_rate;
 var row_product_price;
 var pos;
+var currency = <?php echo json_encode($currency) ?>;
 
 var rownumber = $('table.order-list tbody tr:last').index();
 
@@ -479,6 +480,7 @@ $.get('../getproduct/' + id, function(data) {
     product_id = data[4];
     product_list = data[5];
     qty_list = data[6];
+    product_warehouse_price = data[7];
 
     $.each(product_code, function(index) {        
         lims_product_array.push(product_code[index] + ' (' + product_name[index] + ')');
@@ -503,6 +505,8 @@ $('select[name="warehouse_id"]').on('change', function() {
         product_id = data[4];
         product_list = data[5];
         qty_list = data[6];
+        product_warehouse_price = data[7];
+        
         $.each(product_code, function(index) {
             lims_product_array.push(product_code[index] + ' (' + product_name[index] + ')');
         });
@@ -549,6 +553,10 @@ lims_productcodeSearch.autocomplete({
 //Change quantity
 $("#myTable").on('input', '.qty', function() {
     rowindex = $(this).closest('tr').index();
+    if($(this).val() < 1 && $(this).val() != '') {
+      $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val(1);
+      alert("Quantity can't be less than 1");
+    }
     checkQuantity($(this).val(), true);
 });
 
@@ -582,6 +590,12 @@ $('button[name="update_btn"]').on("click", function() {
     if (parseFloat(edit_discount) > parseFloat(edit_unit_price)) {
         alert('Invalid Discount Input!');
         return;
+    }
+
+    if(edit_qty < 1) {
+        $('input[name="edit_qty"]').val(1);
+        edit_qty = 1;
+        alert("Quantity can't be less than 1");
     }
 
     var tax_rate_all = <?php echo json_encode($tax_rate_all) ?>;
@@ -690,7 +704,13 @@ function productSearch(data) {
                 newRow.append(cols);
                 $("table.order-list tbody").append(newRow);
 
-                product_price.push(parseFloat(data[2]) + parseFloat(data[2] * customer_group_rate));
+                pos = product_code.indexOf(data[1]);
+                if(!data[11] && product_warehouse_price[pos]) {
+                    product_price.push(parseFloat(product_warehouse_price[pos] * currency['exchange_rate']) + parseFloat(product_warehouse_price[pos] * currency['exchange_rate'] * customer_group_rate));
+                }
+                else {
+                    product_price.push(parseFloat(data[2] * currency['exchange_rate']) + parseFloat(data[2] * currency['exchange_rate'] * customer_group_rate));
+                }
 
                 product_discount.push('0.00');
                 tax_rate.push(parseFloat(data[3]));

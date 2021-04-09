@@ -12,7 +12,7 @@ nav.navbar a.menu-btn:hover {
     top: 63px;
     left: 0;
     width: 200px;
-    height: 100%;
+    height: 90%;
     opacity: 1;
     width: 230px;
     text-align: left;
@@ -444,7 +444,7 @@ a:focus,button:focus,.btn:focus {
 	margin-top: 17px;
 }
 
-.product-link, .product-img, .sale-link, .return-link, .purchase-link, .transfer-link, .quotation-link, .category-img, .brand-img, .theme-option {
+.product-link, .product-img, .sale-link, .delivery-link, .return-link, .purchase-link, .transfer-link, .quotation-link, .category-img, .brand-img, .theme-option {
 	cursor: pointer;
 }
 
@@ -489,6 +489,8 @@ div.ui-keyboard {
 	background: #7c5cc4;
 	width: 300px;
 	padding: 15px;
+	position: absolute !important;
+	z-index: 999;
 }
 
 .ui-menu.ui-widget.ui-widget-content.ui-autocomplete.ui-front li.ui-menu-item {
@@ -1153,3 +1155,4 @@ table.dataTable tbody td.dt-checkboxes-cell {
 	height: 75vh;
 	overflow-y: auto;
 }
+

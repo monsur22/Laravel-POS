@@ -50,7 +50,26 @@
                                     </div>
                                     <div class="form-group">
                                         <label><strong>{{trans('file.Phone Number')}} *</strong></label>
-                                        <input type="text" name="phone" required class="form-control">
+                                        <input type="text" name="phone_number" required class="form-control">
+                                        @if($errors->has('phone_number'))
+                                            <span>
+                                               <strong>{{ $errors->first('phone_number') }}</strong>
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div class="customer-section">
+                                        <div class="form-group">
+                                            <label><strong>{{trans('file.Address')}} *</strong></label>
+                                            <input type="text" name="address" class="form-control customer-input">
+                                        </div>
+                                        <div class="form-group">
+                                            <label><strong>{{trans('file.State')}}</strong></label>
+                                            <input type="text" name="state" class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label><strong>{{trans('file.Country')}}</strong></label>
+                                            <input type="text" name="country" class="form-control">
+                                        </div>
                                     </div>
                                     <div class="form-group">
                                         <input class="mt-2" type="checkbox" name="is_active" value="1" checked>
@@ -72,6 +91,32 @@
                                               <option value="{{$role->id}}">{{$role->name}}</option>
                                           @endforeach
                                         </select>
+                                    </div>
+                                    <div class="customer-section">
+                                        <div class="form-group">
+                                            <label><strong>{{trans('file.Customer Group')}} *</strong></label>
+                                            <select name="customer_group_id" class="selectpicker form-control customer-input" data-live-search="true" data-live-search-style="begins" title="Select customer_group...">
+                                              @foreach($lims_customer_group_list as $customer_group)
+                                                  <option value="{{$customer_group->id}}">{{$customer_group->name}}</option>
+                                              @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label><strong>{{trans('file.name')}} *</strong></label>
+                                            <input type="text" name="customer_name" class="form-control customer-input">
+                                        </div>
+                                        <div class="form-group">
+                                            <label><strong>{{trans('file.Tax Number')}}</strong></label>
+                                            <input type="text" name="tax_number" class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label><strong>{{trans('file.City')}} *</strong></label>
+                                            <input type="text" name="city" class="form-control customer-input">
+                                        </div>
+                                        <div class="form-group">
+                                            <label><strong>{{trans('file.Postal Code')}}</strong></label>
+                                            <input type="text" name="postal_code" class="form-control">
+                                        </div>
                                     </div>
                                     <div class="form-group" id="biller-id">
                                         <label><strong>{{trans('file.Biller')}} *</strong></label>
@@ -107,6 +152,7 @@
 
     $('#warehouseId').hide();
     $('#biller-id').hide();
+    $('.customer-section').hide();
 
     $('.selectpicker').selectpicker({
       style: 'btn-link',
@@ -119,17 +165,29 @@
     });
 
     $('select[name="role_id"]').on('change', function() {
-        if($(this).val() > 2){
-            $('select[name="warehouse_id"]').prop('required',true);
-            $('select[name="biller_id"]').prop('required',true);
-            $('#biller-id').show();
-            $('#warehouseId').show();
-        }
-        else{
+        if($(this).val() == 5) {
+            $('#biller-id').hide(300);
+            $('#warehouseId').hide(300);
+            $('.customer-section').show(300);
+            $('.customer-input').prop('required',true);
             $('select[name="warehouse_id"]').prop('required',false);
             $('select[name="biller_id"]').prop('required',false);
-            $('#biller-id').hide();
-            $('#warehouseId').hide();
+        }
+        else if($(this).val() > 2 && $(this).val() != 5) {
+            $('select[name="warehouse_id"]').prop('required',true);
+            $('select[name="biller_id"]').prop('required',true);
+            $('#biller-id').show(300);
+            $('#warehouseId').show(300);
+            $('.customer-section').hide(300);
+            $('.customer-input').prop('required',false);
+        }
+        else {
+            $('select[name="warehouse_id"]').prop('required',false);
+            $('select[name="biller_id"]').prop('required',false);
+            $('#biller-id').hide(300);
+            $('#warehouseId').hide(300);
+            $('.customer-section').hide(300);
+            $('.customer-input').prop('required',false);
         }
     });
 </script>

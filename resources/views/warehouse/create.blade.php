@@ -25,17 +25,34 @@
                     <th>{{trans('file.Phone Number')}}</th>
                     <th>{{trans('file.Email')}}</th>                 
                     <th>{{trans('file.Address')}}</th>
+                    <th>{{trans('file.Number of Product')}}</th>
+                    <th>{{trans('file.Stock Quantity')}}</th>
                     <th class="not-exported">{{trans('file.action')}}</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($lims_warehouse_all as $key=>$warehouse)
+                <?php
+                    $number_of_product = App\Product_Warehouse::
+                    join('products', 'product_warehouse.product_id', '=', 'products.id')
+                    ->where([ ['product_warehouse.warehouse_id', $warehouse->id],
+                              ['products.is_active', true]
+                    ])->count();
+
+                    $stock_qty = App\Product_Warehouse::
+                    join('products', 'product_warehouse.product_id', '=', 'products.id')
+                    ->where([ ['product_warehouse.warehouse_id', $warehouse->id],
+                              ['products.is_active', true]
+                    ])->sum('product_warehouse.qty');
+                ?>
                 <tr data-id="{{$warehouse->id}}">
                     <td>{{$key}}</td>
                     <td>{{ $warehouse->name }}</td>
                     <td>{{ $warehouse->phone}}</td>
                     <td>{{ $warehouse->email}}</td>
                     <td>{{ $warehouse->address}}</td>
+                    <td>{{$number_of_product}}</td>
+                    <td>{{$stock_qty}}</td>
                     <td>
                         <div class="btn-group">
                             <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{trans('file.action')}}
@@ -220,7 +237,7 @@
         'columnDefs': [
             {
                 "orderable": false,
-                'targets': [0, 5]
+                'targets': [0, 5, 6, 7]
             },
             {
                 'render': function(data, type, row, meta){

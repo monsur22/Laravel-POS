@@ -397,6 +397,39 @@
             </div>
         </div>
     </div>
+    <!-- add cash register modal -->
+    <div id="cash-register-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" class="modal fade text-left">
+        <div role="document" class="modal-dialog">
+          <div class="modal-content">
+            {!! Form::open(['route' => 'cashRegister.store', 'method' => 'post']) !!}
+            <div class="modal-header">
+              <h5 id="exampleModalLabel" class="modal-title">{{trans('file.Add Cash Register')}}</h5>
+              <button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true"><i class="dripicons-cross"></i></span></button>
+            </div>
+            <div class="modal-body">
+              <p class="italic"><small>{{trans('file.The field labels marked with * are required input fields')}}.</small></p>
+                <div class="row">
+                  <div class="col-md-6 form-group warehouse-section">
+                      <label>{{trans('file.Warehouse')}} *</strong> </label>
+                      <select required name="warehouse_id" class="selectpicker form-control" data-live-search="true" data-live-search-style="begins" title="Select warehouse...">
+                          @foreach($lims_warehouse_list as $warehouse)
+                          <option value="{{$warehouse->id}}">{{$warehouse->name}}</option>
+                          @endforeach
+                      </select>
+                  </div>
+                  <div class="col-md-6 form-group">
+                      <label>{{trans('file.Cash in Hand')}} *</strong> </label>
+                      <input type="number" name="cash_in_hand" required class="form-control">
+                  </div>
+                  <div class="col-md-12 form-group">
+                      <button type="submit" class="btn btn-primary">{{trans('file.submit')}}</button>
+                  </div>
+                </div>
+            </div>
+            {{ Form::close() }}
+          </div>
+        </div>
+    </div>
 </section>
 <script type="text/javascript">
 
@@ -434,7 +467,8 @@ var exist_qty = [];
 var rowindex;
 var customer_group_rate;
 var row_product_price;
-var currency = <?php echo json_encode($general_setting->currency) ?>;
+var currency = <?php echo json_encode($currency) ?>;
+var role_id = <?php echo json_encode(Auth::user()->role_id)?>;
 
 var rownumber = $('table.order-list tbody tr:last').index();
 
@@ -496,7 +530,8 @@ $.get('../getproduct/' + id, function(data) {
     product_id = data[4];
     product_list = data[5];
     qty_list = data[6];
-
+    product_warehouse_price = data[7];
+    
     $.each(product_code, function(index) {
         if(exist_code.includes(product_code[index])) {
             pos = exist_code.indexOf(product_code[index]);
@@ -512,6 +547,8 @@ $.get('../getproduct/' + id, function(data) {
         product_qty.push(exist_qty[index]);
     });
 });
+
+isCashRegisterAvailable(id);
 
 $('select[name="customer_id"]').on('change', function() {
     var id = $(this).val();
@@ -531,10 +568,12 @@ $('select[name="warehouse_id"]').on('change', function() {
         product_id = data[4];
         product_list = data[5];
         qty_list = data[6];
+        product_warehouse_price = data[7];
         $.each(product_code, function(index) {
             lims_product_array.push(product_code[index] + ' (' + product_name[index] + ')');
         });
     });
+    isCashRegisterAvailable(id);
 });
 
 var lims_productcodeSearch = $('#lims_productcodeSearch');
@@ -561,6 +600,10 @@ lims_productcodeSearch.autocomplete({
 //Change quantity
 $("#myTable").on('input', '.qty', function() {
     rowindex = $(this).closest('tr').index();
+    if($(this).val() < 1 && $(this).val() != '') {
+      $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val(1);
+      alert("Quantity can't be less than 1");
+    }
     checkQuantity($(this).val(), true);
 });
 
@@ -597,6 +640,12 @@ $('button[name="update_btn"]').on("click", function() {
         return;
     }
 
+    if(edit_qty < 1) {
+        $('input[name="edit_qty"]').val(1);
+        edit_qty = 1;
+        alert("Quantity can't be less than 1");
+    }
+
     var tax_rate_all = <?php echo json_encode($tax_rate_all) ?>;
     tax_rate[rowindex] = parseFloat(tax_rate_all[$('select[name="edit_tax_rate"]').val()]);
     tax_name[rowindex] = $('select[name="edit_tax_rate"] option:selected').text();
@@ -627,6 +676,26 @@ $('button[name="update_btn"]').on("click", function() {
     product_discount[rowindex] = $('input[name="edit_discount"]').val();
     checkQuantity(edit_qty, false);
 });
+
+function isCashRegisterAvailable(warehouse_id) {
+    $.ajax({
+        url: '../../cash-register/check-availability/'+warehouse_id,
+        type: "GET",
+        success:function(data) {
+            if(data == 'false') {
+                $('#cash-register-modal select[name=warehouse_id]').val(warehouse_id);
+                $('.selectpicker').selectpicker('refresh');
+                if(role_id <= 2){
+                    $("#cash-register-modal .warehouse-section").removeClass('d-none');
+                }
+                else {
+                    $("#cash-register-modal .warehouse-section").addClass('d-none');
+                }
+                $("#cash-register-modal").modal('show');
+            }
+        }
+    });
+}
 
 function productSearch(data){
     $.ajax({
@@ -672,8 +741,14 @@ function productSearch(data){
                 newRow.append(cols);
                 $("table.order-list tbody").append(newRow);
 
-                product_price.push(parseFloat(data[2]) + parseFloat(data[2] * customer_group_rate));
-
+                pos = product_code.indexOf(data[1]);
+                if(!data[11] && product_warehouse_price[pos]) {
+                    product_price.push(parseFloat(product_warehouse_price[pos] * currency['exchange_rate']) + parseFloat(product_warehouse_price[pos] * currency['exchange_rate'] * customer_group_rate));
+                }
+                else {
+                    product_price.push(parseFloat(data[2] * currency['exchange_rate']) + parseFloat(data[2] * currency['exchange_rate'] * customer_group_rate));
+                }
+                
                 product_discount.push('0.00');
                 tax_rate.push(parseFloat(data[3]));
                 tax_name.push(data[4]);
@@ -914,7 +989,7 @@ function couponDiscount() {
                 $('input[name="grand_total"]').val( $('input[name="grand_total"]').val() - $('input[name="coupon_amount"]').val() );
             }
             else
-                alert('Grand Total is not sufficient for discount! Required '+ $('input[name="coupon_minimum_amount"]').val() + ' ' + currency);
+                alert('Grand Total is not sufficient for discount! Required '+ currency['code'] + ' ' +$('input[name="coupon_minimum_amount"]').val());
         }
         else{
             var grand_total = $('input[name="grand_total"]').val();

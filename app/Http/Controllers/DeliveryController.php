@@ -5,8 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Customer;
 use App\Sale;
+use App\Product_Sale;
+use App\Product;
+use App\ProductVariant;
 use App\Delivery;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use DB;
+use Auth;
 use App\Mail\UserNotification;
 use Illuminate\Support\Facades\Mail;
 
@@ -14,8 +20,13 @@ class DeliveryController extends Controller
 {
 	public function index()
 	{
-		$lims_delivery_all = Delivery::orderBy('id', 'desc')->get();
-		return view('delivery.index', compact('lims_delivery_all'));
+        $role = Role::find(Auth::user()->role_id);
+        if($role->hasPermissionTo('delivery')) {
+    		$lims_delivery_all = Delivery::orderBy('id', 'desc')->get();
+    		return view('delivery.index', compact('lims_delivery_all'));
+        }
+        else
+            return redirect()->back()->with('not_permitted', 'Sorry! You are not allowed to access this module');
 	}
     public function create($id){
     	$lims_delivery_data = Delivery::where('sale_id', $id)->first();
@@ -58,6 +69,7 @@ class DeliveryController extends Controller
             $delivery->file = $documentName;
         }
         $delivery->sale_id = $data['sale_id'];
+        $delivery->user_id = Auth::id();
         $delivery->address = $data['address'];
         $delivery->delivered_by = $data['delivered_by'];
         $delivery->recieved_by = $data['recieved_by'];
@@ -87,6 +99,85 @@ class DeliveryController extends Controller
             }  
         }
         return redirect('delivery')->with('message', $message);
+    }
+
+    public function productDeliveryData($id)
+    {
+        $lims_delivery_data = Delivery::find($id);
+        //return 'madarchod';
+        $lims_product_sale_data = Product_Sale::where('sale_id', $lims_delivery_data->sale->id)->get();
+
+        foreach ($lims_product_sale_data as $key => $product_sale_data) {
+            $product = Product::select('name', 'code')->find($product_sale_data->product_id);
+            if($product_sale_data->variant_id) {
+                $lims_product_variant_data = ProductVariant::select('item_code')->FindExactProduct($product_sale_data->product_id, $product_sale_data->variant_id)->first();
+                $product->code = $lims_product_variant_data->item_code;
+            }
+
+            $product_sale[0][$key] = $product->code;
+            $product_sale[1][$key] = $product->name;
+            $product_sale[2][$key] = $product_sale_data->qty;
+        }
+        return $product_sale;
+    }
+
+    public function sendMail(Request $request)
+    {
+        $data = $request->all();
+        $lims_delivery_data = Delivery::find($data['delivery_id']);
+        $lims_sale_data = Sale::find($lims_delivery_data->sale->id);
+        $lims_product_sale_data = Product_Sale::where('sale_id', $lims_delivery_data->sale->id)->get();
+        $lims_customer_data = Customer::find($lims_sale_data->customer_id);
+        if($lims_customer_data->email) {
+            //collecting male data
+            $mail_data['email'] = $lims_customer_data->email;
+            $mail_data['date'] = date(config('date_format'), strtotime($lims_delivery_data->created_at->toDateString()));
+            $mail_data['delivery_reference_no'] = $lims_delivery_data->reference_no;
+            $mail_data['sale_reference_no'] = $lims_sale_data->reference_no;
+            $mail_data['status'] = $lims_delivery_data->status;
+            $mail_data['customer_name'] = $lims_customer_data->name;
+            $mail_data['address'] = $lims_customer_data->address . ', '.$lims_customer_data->city;
+            $mail_data['phone_number'] = $lims_customer_data->phone_number;
+            $mail_data['note'] = $lims_delivery_data->note;
+            $mail_data['prepared_by'] = $lims_delivery_data->user->name;
+            if($lims_delivery_data->delivered_by)
+                $mail_data['delivered_by'] = $lims_delivery_data->delivered_by;
+            else
+                $mail_data['delivered_by'] = 'N/A';
+            if($lims_delivery_data->recieved_by)
+                $mail_data['recieved_by'] = $lims_delivery_data->recieved_by;
+            else
+                $mail_data['recieved_by'] = 'N/A';
+            //return $mail_data;
+
+            foreach ($lims_product_sale_data as $key => $product_sale_data) {
+                $lims_product_data = Product::select('code', 'name')->find($product_sale_data->product_id);
+                $mail_data['codes'][$key] = $lims_product_data->code;
+                $mail_data['name'][$key] = $lims_product_data->name;
+                if($product_sale_data->variant_id) {
+                    $lims_product_variant_data = ProductVariant::select('item_code')->FindExactProduct($product_sale_data->product_id, $product_sale_data->variant_id)->first();
+                    $mail_data['codes'][$key] = $lims_product_variant_data->item_code;
+                }
+                $mail_data['qty'][$key] = $product_sale_data->qty;
+            }
+
+            //return $mail_data;
+
+            try{
+                Mail::send( 'mail.delivery_challan', $mail_data, function( $message ) use ($mail_data)
+                {
+                    $message->to( $mail_data['email'] )->subject( 'Delivery Challan' );
+                });
+                $message = 'Mail sent successfully';
+            }
+            catch(\Exception $e){
+                $message = 'Please setup your <a href="setting/mail_setting">mail setting</a> to send mail.';
+            }
+        }
+        else
+            $message = 'Customer does not have email!';
+        
+        return redirect()->back()->with('message', $message);
     }
 
     public function edit($id)

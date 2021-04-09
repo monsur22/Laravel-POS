@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Expense;
 use App\Account;
+use App\CashRegister;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Auth;
@@ -43,6 +44,13 @@ class ExpenseController extends Controller
         $data = $request->all();
         $data['reference_no'] = 'er-' . date("Ymd") . '-'. date("his");
         $data['user_id'] = Auth::id();
+        $cash_register_data = CashRegister::where([
+            ['user_id', $data['user_id']],
+            ['warehouse_id', $data['warehouse_id']],
+            ['status', true]
+        ])->first();
+        if($cash_register_data)
+            $data['cash_register_id'] = $cash_register_data->id;
         Expense::create($data);
         return redirect('expenses')->with('message', 'Data inserted successfully');
     }

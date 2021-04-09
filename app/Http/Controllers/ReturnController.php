@@ -17,6 +17,7 @@ use App\Account;
 use App\ProductReturn;
 use App\ProductVariant;
 use App\Variant;
+use App\CashRegister;
 use Auth;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
@@ -51,8 +52,14 @@ class ReturnController extends Controller
         $role = Role::find(Auth::user()->role_id);
         if($role->hasPermissionTo('returns-add')){
             $lims_customer_list = Customer::where('is_active',true)->get();
-            $lims_warehouse_list = Warehouse::where('is_active',true)->get();
-            $lims_biller_list = Biller::where('is_active',true)->get();
+            if(Auth::user()->role_id <= 2) {
+                $lims_warehouse_list = Warehouse::where('is_active',true)->get();
+                $lims_biller_list = Biller::where('is_active',true)->get();
+            }
+            else {
+                $lims_warehouse_list = Warehouse::where('id',Auth::user()->warehouse_id)->get();
+                $lims_biller_list = Biller::where('id', Auth::user()->biller_id)->get();
+            }
             $lims_tax_list = Tax::where('is_active',true)->get();
             return view('return.create', compact('lims_customer_list', 'lims_warehouse_list', 'lims_biller_list', 'lims_tax_list'));
         }
@@ -69,18 +76,31 @@ class ReturnController extends Controller
 
     public function getProduct($id)
     {
-        $lims_product_warehouse_data = Product_Warehouse::where('warehouse_id', $id)->whereNull('variant_id')->get();
-        $lims_product_with_variant_warehouse_data = Product_Warehouse::where('warehouse_id', $id)->whereNotNull('variant_id')->get();
+        //retrieve data of product without variant
+        $lims_product_warehouse_data = Product::join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
+        ->where([
+            ['products.is_active', true],
+            ['product_warehouse.warehouse_id', $id],
+        ])->whereNull('product_warehouse.variant_id')->select('product_warehouse.*')->get();
+        //retrieve data of product with variant
+        $lims_product_with_variant_warehouse_data = Product::join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
+        ->where([
+            ['products.is_active', true],
+            ['product_warehouse.warehouse_id', $id],
+        ])->whereNotNull('product_warehouse.variant_id')->select('product_warehouse.*')->get();
+
         $product_code = [];
         $product_name = [];
         $product_qty = [];
+        $product_price = [];
         $product_data = [];
         foreach ($lims_product_warehouse_data as $product_warehouse) 
         {
             $product_qty[] = $product_warehouse->qty;
+            $product_price[] = $product_warehouse->price;
             $lims_product_data = Product::select('code', 'name', 'type')->find($product_warehouse->product_id);
             $product_code[] =  $lims_product_data->code;
-            $product_name[] = $lims_product_data->name;
+            $product_name[] = htmlspecialchars($lims_product_data->name);
             $product_type[] = $lims_product_data->type;
         }
         foreach ($lims_product_with_variant_warehouse_data as $product_warehouse) 
@@ -89,7 +109,7 @@ class ReturnController extends Controller
             $lims_product_data = Product::select('name', 'type')->find($product_warehouse->product_id);
             $lims_product_variant_data = ProductVariant::select('item_code')->FindExactProduct($product_warehouse->product_id, $product_warehouse->variant_id)->first();
             $product_code[] =  $lims_product_variant_data->item_code;
-            $product_name[] = $lims_product_data->name;
+            $product_name[] = htmlspecialchars($lims_product_data->name);
             $product_type[] = $lims_product_data->type;
         }
         $lims_product_data = Product::select('code', 'name', 'type')->where('is_active', true)->whereNotIn('type', ['standard'])->get();
@@ -97,26 +117,28 @@ class ReturnController extends Controller
         {
             $product_qty[] = $product->qty;
             $product_code[] =  $product->code;
-            $product_name[] = $product->name;
+            $product_name[] = htmlspecialchars($product->name);
             $product_type[] = $product->type;
         }
         $product_data[] = $product_code;
         $product_data[] = $product_name;
         $product_data[] = $product_qty;
         $product_data[] = $product_type;
+        $product_data[] = $product_price;
         return $product_data;
     }
 
     public function limsProductSearch(Request $request)
     {
         $todayDate = date('Y-m-d');
-        $product_code = explode(" ",$request['data']);
+        $product_code = explode("(", $request['data']);
+        $product_code[0] = rtrim($product_code[0], " ");
         $lims_product_data = Product::where('code', $product_code[0])->first();
         $product_variant_id = null;
         if(!$lims_product_data) {
             $lims_product_data = Product::join('product_variants', 'products.id', 'product_variants.product_id')
                 ->select('products.*', 'product_variants.id as product_variant_id', 'product_variants.item_code', 'product_variants.additional_price')
-                ->where('product_variants.item_code', $product_code)
+                ->where('product_variants.item_code', $product_code[0])
                 ->first();
             $lims_product_data->code = $lims_product_data->item_code;
             $lims_product_data->price += $lims_product_data->additional_price;
@@ -171,6 +193,7 @@ class ReturnController extends Controller
         }
         $product[] = $lims_product_data->id;
         $product[] = $product_variant_id;
+        $product[] = $lims_product_data->promotion;
         return $product;
     }
 
@@ -180,6 +203,13 @@ class ReturnController extends Controller
         //return dd($data);
         $data['reference_no'] = 'rr-' . date("Ymd") . '-'. date("his");
         $data['user_id'] = Auth::id();
+        $cash_register_data = CashRegister::where([
+            ['user_id', $data['user_id']],
+            ['warehouse_id', $data['warehouse_id']],
+            ['status', true]
+        ])->first();
+        if($cash_register_data)
+            $data['cash_register_id'] = $cash_register_data->id;
         $lims_account_data = Account::where('is_default', true)->first();
         $data['account_id'] = $lims_account_data->id;
         $document = $request->document;

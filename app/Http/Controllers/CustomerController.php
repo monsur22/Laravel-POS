@@ -55,8 +55,39 @@ class CustomerController extends Controller
         ]);
         $lims_customer_data = $request->all();
         $lims_customer_data['is_active'] = true;
-        $message = 'Customer created successfully';
-        if($lims_customer_data['email']){
+        //creating user if given user access
+        if(isset($lims_customer_data['user'])) {
+            $this->validate($request, [
+                'name' => [
+                    'max:255',
+                        Rule::unique('users')->where(function ($query) {
+                        return $query->where('is_deleted', false);
+                    }),
+                ],
+                'email' => [
+                    'email',
+                    'max:255',
+                        Rule::unique('users')->where(function ($query) {
+                        return $query->where('is_deleted', false);
+                    }),
+                ],
+            ]);
+
+            $lims_customer_data['phone'] = $lims_customer_data['phone_number'];
+            $lims_customer_data['role_id'] = 5;
+            $lims_customer_data['is_deleted'] = false;
+            $lims_customer_data['password'] = bcrypt($lims_customer_data['password']);
+            $user = User::create($lims_customer_data);
+            $lims_customer_data['user_id'] = $user->id;
+            $message = 'Customer and user created successfully';
+        }
+        else {
+            $message = 'Customer created successfully';
+        }
+        
+        $lims_customer_data['name'] = $lims_customer_data['customer_name'];
+        
+        if($lims_customer_data['email']) {
             try{
                 Mail::send( 'mail.customer_create', $lims_customer_data, function( $message ) use ($lims_customer_data)
                 {
@@ -67,6 +98,7 @@ class CustomerController extends Controller
                 $message = 'Customer created successfully. Please setup your <a href="setting/mail_setting">mail setting</a> to send mail.';
             }   
         }
+
         Customer::create($lims_customer_data);
         if($lims_customer_data['pos'])
             return redirect('pos')->with('message', $message);
@@ -99,8 +131,40 @@ class CustomerController extends Controller
 
         $input = $request->all();
         $lims_customer_data = Customer::find($id);
+
+        if(isset($input['user'])) {
+            $this->validate($request, [
+                'name' => [
+                    'max:255',
+                        Rule::unique('users')->where(function ($query) {
+                        return $query->where('is_deleted', false);
+                    }),
+                ],
+                'email' => [
+                    'email',
+                    'max:255',
+                        Rule::unique('users')->where(function ($query) {
+                        return $query->where('is_deleted', false);
+                    }),
+                ],
+            ]);
+
+            $input['phone'] = $input['phone_number'];
+            $input['role_id'] = 5;
+            $input['is_active'] = true;
+            $input['is_deleted'] = false;
+            $input['password'] = bcrypt($input['password']);
+            $user = User::create($input);
+            $input['user_id'] = $user->id;
+            $message = 'Customer updated and user created successfully';
+        }
+        else {
+            $message = 'Customer updated successfully';
+        }
+        
+        $lims_customer_data['name'] = $lims_customer_data['customer_name'];
         $lims_customer_data->update($input);
-        return redirect('customer')->with('edit_message', 'Data updated Successfully');
+        return redirect('customer')->with('edit_message', $message);
     }
 
     public function importCustomer(Request $request)

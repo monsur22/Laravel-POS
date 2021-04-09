@@ -2,7 +2,7 @@
 @if($errors->has('title'))
 <div class="alert alert-danger alert-dismissible text-center">
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{ $errors->first('title') }}</div>
-@endif 
+@endif
 @if($errors->has('image'))
 <div class="alert alert-danger alert-dismissible text-center">
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{ $errors->first('image') }}</div>

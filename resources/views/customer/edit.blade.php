@@ -28,7 +28,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>{{trans('file.name')}} *</strong> </label>
-                                    <input type="text" name="name" value="{{$lims_customer_data->name}}" required class="form-control">
+                                    <input type="text" name="customer_name" value="{{$lims_customer_data->name}}" required class="form-control">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -84,10 +84,35 @@
                                     <input type="text" name="postal_code" value="{{$lims_customer_data->postal_code}}" class="form-control">
                                 </div>
                             </div>
+                            @if(!$lims_customer_data->user_id)
+                            <div class="col-md-6 mt-3">
+                                <div class="form-group">
+                                    <label>{{trans('file.Add User')}}</label>&nbsp;
+                                    <input type="checkbox" name="user" value="1" />
+                                </div>
+                            </div>
+                            @endif
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>{{trans('file.Country')}}</label>
                                     <input type="text" name="country" value="{{$lims_customer_data->country}}" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-6 user-input">
+                                <div class="form-group">
+                                    <label>{{trans('file.UserName')}} *</label>
+                                    <input type="text" name="name" class="form-control">
+                                    @if($errors->has('name'))
+                                   <span>
+                                       <strong>{{ $errors->first('name') }}</strong>
+                                    </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6 user-input">
+                                <div class="form-group">
+                                    <label>{{trans('file.Password')}} *</label>
+                                    <input type="password" name="password" class="form-control">
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -108,6 +133,21 @@
 
     $("ul#people").siblings('a').attr('aria-expanded','true');
     $("ul#people").addClass("show");
+
+    $(".user-input").hide();
+
+    $('input[name="user"]').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('.user-input').show(300);
+            $('input[name="name"]').prop('required',true);
+            $('input[name="password"]').prop('required',true);
+        }
+        else{
+            $('.user-input').hide(300);
+            $('input[name="name"]').prop('required',false);
+            $('input[name="password"]').prop('required',false);
+        }
+    });
         
     var customer_group = $("input[name='customer_group']").val();
     $('select[name=customer_group_id]').val(customer_group);

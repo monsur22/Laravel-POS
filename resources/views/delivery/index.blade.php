@@ -31,8 +31,10 @@
                         $status = trans('file.Delivering');
                     else
                         $status = trans('file.Delivered');
+                    
+                    $barcode = \DNS2D::getBarcodePNG($delivery->reference_no, 'QRCODE');
                 ?>
-                <tr data-id="{{$delivery->id}}">
+                <tr class="delivery-link" data-barcode="{{$barcode}}" data-delivery='["{{date($general_setting->date_format, strtotime($delivery->created_at->toDateString()))}}", "{{$delivery->reference_no}}", "{{$delivery->sale->reference_no}}", "{{$status}}", "{{$delivery->id}}", "{{$delivery->sale->customer->name}}", "{{$delivery->sale->customer->phone_number}}", "{{$delivery->sale->customer->address}}", "{{$delivery->sale->customer->city}}", "{{$delivery->note}}", "{{$delivery->user->name}}", "{{$delivery->delivered_by}}", "{{$delivery->recieved_by}}"]'>
                     <td>{{$key}}</td>
                     <td>{{ $delivery->reference_no }}</td>
                     <td>{{ $customer_sale[0]->reference_no }}</td>
@@ -72,6 +74,55 @@
 </seaction>
 
 <!-- Modal -->
+<div id="delivery-details" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" class="modal fade text-left">
+    <div role="document" class="modal-dialog">
+      <div class="modal-content">
+        <div class="container mt-3 pb-2 border-bottom">
+            <div class="row">
+                <div class="col-md-3">
+                    <button id="print-btn" type="button" class="btn btn-default btn-sm d-print-none"><i class="dripicons-print"></i> {{trans('file.Print')}}</button>
+
+                    {{ Form::open(['route' => 'delivery.sendMail', 'method' => 'post', 'class' => 'sendmail-form'] ) }}
+                        <input type="hidden" name="delivery_id">
+                        <button class="btn btn-default btn-sm d-print-none"><i class="dripicons-mail"></i> {{trans('file.Email')}}</button>
+                    {{ Form::close() }}
+                </div>
+                <div class="col-md-6">
+                    <h3 id="exampleModalLabel" class="modal-title text-center container-fluid">
+                        <img src="{{url('public/logo', $general_setting->site_logo)}}" width="30">
+                        {{$general_setting->site_title}}
+                    </h3>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" id="close-btn" data-dismiss="modal" aria-label="Close" class="close d-print-none"><span aria-hidden="true"><i class="dripicons-cross"></i></span></button>
+                </div>
+                <div class="col-md-12 text-center">
+                    <i style="font-size: 15px;">{{trans('file.Delivery Details')}}</i>
+                </div>
+            </div>
+        </div>
+        <div class="modal-body">
+            <table class="table table-bordered" id="delivery-content">
+                <tbody></tbody>
+            </table>
+            <br>
+            <table class="table table-bordered product-delivery-list">
+                <thead>
+                    <th>No</th>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th>Qty</th>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <div id="delivery-footer" class="row">
+            </div>            
+        </div>    
+      </div>
+    </div>
+</div>
+
 <div id="edit-delivery" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" class="modal fade text-left">
     <div role="document" class="modal-dialog">
         <div class="modal-content">
@@ -147,34 +198,96 @@
         }
     });
 
+    $("#print-btn").on("click", function(){
+          var divToPrint=document.getElementById('delivery-details');
+          var newWin=window.open('','Print-Window');
+          newWin.document.open();
+          newWin.document.write('<link rel="stylesheet" href="<?php echo asset('public/vendor/bootstrap/css/bootstrap.min.css') ?>" type="text/css"><style type="text/css">@media print {.modal-dialog { max-width: 1000px;} }</style><body onload="window.print()">'+divToPrint.innerHTML+'</body>');
+          newWin.document.close();
+          setTimeout(function(){newWin.close();},10);
+    });
+
     function confirmDelete() {
       if (confirm("Are you sure want to delete?")) {
           return true;
       }
       return false;
     }
-$(document).ready(function() {
-    $('.open-EditCategoryDialog').on('click', function(){
-      var url ="delivery/"  
-      var id = $(this).data('id').toString();
-      url = url.concat(id).concat("/edit");
-      
-      $.get(url, function(data){
-            $('#dr').text(data[0]);
-            $('#sr').text(data[1]);
-            $('select[name="status"]').val(data[2]);
-            $('.selectpicker').selectpicker('refresh');
-            $('input[name="delivered_by"]').val(data[3]);
-            $('input[name="recieved_by"]').val(data[4]);
-            $('#customer').text(data[5]);
-            $('textarea[name="address"]').val(data[6]);
-            $('textarea[name="note"]').val(data[7]);
-            $('input[name="reference_no"]').val(data[0]);
-            $('input[name="delivery_id"]').val(id);
-      });
-      $("#edit-delivery").modal('show');
+
+    $("tr.delivery-link td:not(:first-child, :last-child)").on("click", function() {
+        var delivery = $(this).parent().data('delivery');
+        var barcode = $(this).parent().data('barcode');
+        deliveryDetails(delivery, barcode);
     });
-});
+
+    function deliveryDetails(delivery, barcode) {
+        $('input[name="delivery_id"]').val(delivery[4]);
+        $("#delivery-content tbody").remove();
+        var newBody = $("<tbody>");
+        var rows = '';
+        rows += '<tr><td>Date</td><td>'+delivery[0]+'</td></tr>';
+        rows += '<tr><td>Delivery Reference</td><td>'+delivery[1]+'</td></tr>';
+        rows += '<tr><td>Sale Reference</td><td>'+delivery[2]+'</td></tr>';
+        rows += '<tr><td>Status</td><td>'+delivery[3]+'</td></tr>';
+        rows += '<tr><td>Customer Name</td><td>'+delivery[5]+'</td></tr>';
+        rows += '<tr><td>Address</td><td>'+delivery[7]+', '+delivery[8]+'</td></tr>';
+        rows += '<tr><td>Phone Number</td><td>'+delivery[6]+'</td></tr>';
+        rows += '<tr><td>Note</td><td>'+delivery[9]+'</td></tr>';
+
+        newBody.append(rows);
+        $("table#delivery-content").append(newBody);
+
+        $.get('delivery/product_delivery/' + delivery[4], function(data) {
+            $(".product-delivery-list tbody").remove();
+            var code = data[0];
+            var description = data[1];
+            var qty = data[2];
+            var newBody = $("<tbody>");
+            $.each(code, function(index) {
+                var newRow = $("<tr>");
+                var cols = '';
+                cols += '<td><strong>' + (index+1) + '</strong></td>';
+                cols += '<td>' + code[index] + '</td>';
+                cols += '<td>' + description[index] + '</td>';
+                cols += '<td>' + qty[index] + '</td>';
+                newRow.append(cols);
+                newBody.append(newRow);
+            });
+            $("table.product-delivery-list").append(newBody);
+        });
+
+        var htmlfooter = '<div class="col-md-4 form-group"><p>Prepared By: '+delivery[10]+'</p></div>';
+        htmlfooter += '<div class="col-md-4 form-group"><p>Delivered By: '+delivery[11]+'</p></div>';
+        htmlfooter += '<div class="col-md-4 form-group"><p>Recieved By: '+delivery[12]+'</p></div>';
+        htmlfooter += '<br><br><br><br>';
+        htmlfooter += '<div class="col-md-2 offset-md-5"><img style="max-width:850px;height:100%;max-height:130px" src="data:image/png;base64,'+barcode+'" alt="barcode" /></div>';
+
+        $('#delivery-footer').html(htmlfooter);
+        $('#delivery-details').modal('show');
+    }
+
+    $(document).ready(function() {
+        $('.open-EditCategoryDialog').on('click', function(){
+          var url ="delivery/"  
+          var id = $(this).data('id').toString();
+          url = url.concat(id).concat("/edit");
+          
+          $.get(url, function(data){
+                $('#dr').text(data[0]);
+                $('#sr').text(data[1]);
+                $('select[name="status"]').val(data[2]);
+                $('.selectpicker').selectpicker('refresh');
+                $('input[name="delivered_by"]').val(data[3]);
+                $('input[name="recieved_by"]').val(data[4]);
+                $('#customer').text(data[5]);
+                $('textarea[name="address"]').val(data[6]);
+                $('textarea[name="note"]').val(data[7]);
+                $('input[name="reference_no"]').val(data[0]);
+                $('input[name="delivery_id"]').val(id);
+          });
+          $("#edit-delivery").modal('show');
+        });
+    });
 
     $('#delivery-table').DataTable( {
         "order": [],

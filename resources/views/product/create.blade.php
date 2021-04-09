@@ -212,7 +212,33 @@
                                         <textarea name="product_details" class="form-control" rows="3"></textarea>
                                     </div>
                                 </div>
-                                <div class="col-md-12" id="variant-option">
+                                <div class="col-md-12 mt-2" id="diffPrice-option">
+                                    <h5><input name="is_diffPrice" type="checkbox" id="is-diffPrice" value="1">&nbsp; {{trans('file.This product has different price for different warehouse')}}</h5>
+                                </div>
+                                <div class="col-md-6" id="diffPrice-section">
+                                    <div class="table-responsive ml-2">
+                                        <table id="diffPrice-table" class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>{{trans('file.Warehouse')}}</th>
+                                                    <th>{{trans('file.Price')}}</th>
+                                                </tr>
+                                                @foreach($lims_warehouse_list as $warehouse)
+                                                <tr>
+                                                    <td>
+                                                        <input type="hidden" name="warehouse_id[]" value="{{$warehouse->id}}">
+                                                        {{$warehouse->name}}
+                                                    </td>
+                                                    <td><input type="number" name="diff_price[]" class="form-control"></td>
+                                                </tr>
+                                                @endforeach
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mt-3" id="variant-option">
                                     <h5><input name="is_variant" type="checkbox" id="is-variant" value="1">&nbsp; {{trans('file.This product has variant')}}</h5>
                                 </div>
                                 <div class="col-md-12" id="variant-section">
@@ -290,6 +316,7 @@
     $("#digital").hide();
     $("#combo").hide();
     $("#variant-section").hide();
+    $("#diffPrice-section").hide();
     $("#promotion_price").hide();
     $("#start_date").hide();
     $("#last_date").hide();
@@ -330,7 +357,8 @@
             $("#combo").show(300);
             $("input[name='price']").prop('disabled',true);
             $("#is-variant").prop("checked", false);
-            $("#variant-section, #variant-option").hide(300);
+            $("#is-diffPrice").prop("checked", false);
+            $("#variant-section, #variant-option, #diffPrice-option, #diffPrice-section").hide(300);
         }
         else if($(this).val() == 'digital'){
             $("input[name='cost']").prop('required',false);
@@ -341,7 +369,8 @@
             $("#combo").hide(300);
             $("input[name='price']").prop('disabled',false);
             $("#is-variant").prop("checked", false);
-            $("#variant-section, #variant-option").hide(300);
+            $("#is-diffPrice").prop("checked", false);
+            $("#variant-section, #variant-option, #diffPrice-option, #diffPrice-section").hide(300);
         }
         else if($(this).val() == 'standard'){
             $("input[name='cost']").prop('required',true);
@@ -351,6 +380,7 @@
             $("#unit").show(300);
             $("#alert-qty").show(300);
             $("#variant-option").show(300);
+            $("#diffPrice-option").show(300);
             $("#digital").hide(300);
             $("#combo").hide(300);
             $("input[name='price']").prop('disabled',false);
@@ -370,7 +400,7 @@
     <?php $productArray = []; ?>
     var lims_product_code = [ @foreach($lims_product_list as $product)
         <?php
-            $productArray[] = $product->code . ' [ ' . $product->name . ' ]';
+            $productArray[] = htmlspecialchars($product->code . ' [ ' . $product->name . ' ]');
         ?>
          @endforeach
             <?php
@@ -472,6 +502,14 @@
         }
         else
             $("#variant-section").hide(300);
+    });
+
+    $("input[name='is_diffPrice']").on("change", function () {
+        if ($(this).is(':checked')) {
+            $("#diffPrice-section").show(300);
+        }
+        else
+            $("#diffPrice-section").hide(300);
     });
 
     $("input[name='variant']").on("input", function () {

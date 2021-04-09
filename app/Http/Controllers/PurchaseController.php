@@ -194,7 +194,7 @@ class PurchaseController extends Controller
                                 </li>';
                 if(in_array("purchases-edit", $request['all_permission']))
                     $nestedData['options'] .= '<li>
-                        <a href="'.route('purchases.edit', ['id' => $purchase->id]).'" class="btn btn-link"><i class="dripicons-document-edit"></i> '.trans('file.edit').'</a>
+                        <a href="'.route('purchases.edit', $purchase->id).'" class="btn btn-link"><i class="dripicons-document-edit"></i> '.trans('file.edit').'</a>
                         </li>';
                 $nestedData['options'] .= 
                     '<li>
@@ -214,7 +214,7 @@ class PurchaseController extends Controller
                 // data for purchase details by one click
                 $user = User::find($purchase->user_id);
 
-                $nestedData['purchase'] = array( '[ "'.date(config('date_format'), strtotime($purchase->created_at->toDateString())).'"', ' "'.$purchase->reference_no.'"', ' "'.$purchase_status.'"',  ' "'.$purchase->id.'"', ' "'.$purchase->warehouse->name.'"', ' "'.$purchase->warehouse->phone.'"', ' "'.$purchase->warehouse->address.'"', ' "'.$supplier->name.'"', ' "'.$supplier->company_name.'"', ' "'.$supplier->email.'"', ' "'.$supplier->phone_number.'"', ' "'.$supplier->address.'"', ' "'.$supplier->city.'"', ' "'.$purchase->total_tax.'"', ' "'.$purchase->total_discount.'"', ' "'.$purchase->total_cost.'"', ' "'.$purchase->order_tax.'"', ' "'.$purchase->order_tax_rate.'"', ' "'.$purchase->order_discount.'"', ' "'.$purchase->shipping_cost.'"', ' "'.$purchase->grand_total.'"', ' "'.$purchase->paid_amount.'"', ' "'.$purchase->purchase_note.'"', ' "'.$user->name.'"', ' "'.$user->email.'"]'
+                $nestedData['purchase'] = array( '[ "'.date(config('date_format'), strtotime($purchase->created_at->toDateString())).'"', ' "'.$purchase->reference_no.'"', ' "'.$purchase_status.'"',  ' "'.$purchase->id.'"', ' "'.$purchase->warehouse->name.'"', ' "'.$purchase->warehouse->phone.'"', ' "'.$purchase->warehouse->address.'"', ' "'.$supplier->name.'"', ' "'.$supplier->company_name.'"', ' "'.$supplier->email.'"', ' "'.$supplier->phone_number.'"', ' "'.$supplier->address.'"', ' "'.$supplier->city.'"', ' "'.$purchase->total_tax.'"', ' "'.$purchase->total_discount.'"', ' "'.$purchase->total_cost.'"', ' "'.$purchase->order_tax.'"', ' "'.$purchase->order_tax_rate.'"', ' "'.$purchase->order_discount.'"', ' "'.$purchase->shipping_cost.'"', ' "'.$purchase->grand_total.'"', ' "'.$purchase->paid_amount.'"', ' "'.preg_replace('/\s+/S', " ", $purchase->note).'"', ' "'.$user->name.'"', ' "'.$user->email.'"]'
                 );
                 $data[] = $nestedData;
             }
@@ -262,12 +262,13 @@ class PurchaseController extends Controller
 
     public function limsProductSearch(Request $request)
     {
-        $product_code = explode(" ", $request['data']);
+        $product_code = explode("(", $request['data']);
+        $product_code[0] = rtrim($product_code[0], " ");
         $lims_product_data = Product::where('code', $product_code[0])->first();
         if(!$lims_product_data) {
             $lims_product_data = Product::join('product_variants', 'products.id', 'product_variants.product_id')
                 ->select('products.*', 'product_variants.item_code')
-                ->where('product_variants.item_code', $product_code)
+                ->where('product_variants.item_code', $product_code[0])
                 ->first();
         }
 
@@ -374,6 +375,7 @@ class PurchaseController extends Controller
                 $lims_product_variant_data->save();
             }
             else {
+                $product_purchase['variant_id'] = null;
                 $lims_product_warehouse_data = Product_Warehouse::where([
                     ['product_id', $id],
                     ['warehouse_id', $data['warehouse_id'] ],

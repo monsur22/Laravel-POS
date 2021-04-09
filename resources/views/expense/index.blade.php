@@ -28,7 +28,7 @@
             </thead>
             <tbody>
                 @foreach($lims_expense_all as $key=>$expense)
-                <?php 
+                <?php
                     $warehouse = DB::table('warehouses')->find($expense->warehouse_id);
                     $expense_category = DB::table('expense_categories')->find($expense->expense_category_id);
                 ?>
@@ -89,8 +89,14 @@
               <p class="italic"><small>{{trans('file.The field labels marked with * are required input fields')}}.</small></p>
                 {!! Form::open(['route' => ['expenses.update', 1], 'method' => 'put']) !!}
                 <?php 
-                  $lims_expense_category_list = DB::table('expense_categories')->where('is_active', true)->get();
-                  $lims_warehouse_list = DB::table('warehouses')->where('is_active', true)->get();
+                    $lims_expense_category_list = DB::table('expense_categories')->where('is_active', true)->get();
+                    if(Auth::user()->role_id > 2)
+                        $lims_warehouse_list = DB::table('warehouses')->where([
+                            ['is_active', true],
+                            ['id', Auth::user()->warehouse_id]
+                        ])->get();
+                    else
+                        $lims_warehouse_list = DB::table('warehouses')->where('is_active', true)->get();
                 ?>
                   <div class="form-group">
                       <input type="hidden" name="expense_id">

@@ -458,6 +458,10 @@ $.get('../getproduct/' + id, function(data) {
 //Change quantity
 $("#myTable").on('input', '.qty', function() {
     rowindex = $(this).closest('tr').index();
+    if($(this).val() < 1 && $(this).val() != '') {
+      $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val(1);
+      alert("Quantity can't be less than 1");
+    }
     checkQuantity($(this).val(), true);
 });
 
@@ -491,6 +495,12 @@ $('button[name="update_btn"]').on("click", function() {
     if (parseFloat(edit_discount) > parseFloat(edit_unit_cost)) {
         alert('Invalid Discount Input!');
         return;
+    }
+
+    if(edit_qty < 1) {
+        $('input[name="edit_qty"]').val(1);
+        edit_qty = 1;
+        alert("Quantity can't be less than 1");
     }
 
     var row_unit_operator = unit_operator[rowindex].slice(0, unit_operator[rowindex].indexOf(","));

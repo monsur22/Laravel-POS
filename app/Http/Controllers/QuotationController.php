@@ -196,7 +196,7 @@ class QuotationController extends Controller
                     $mail_data['unit'][$key] = '';
 
                 $mail_data['qty'][$key] = $product_quotation_data->qty;
-                $mail_data['total'][$key] = $product_quotation_data->qty;
+                $mail_data['total'][$key] = $product_quotation_data->total;
             }
 
             try{
@@ -228,12 +228,20 @@ class QuotationController extends Controller
         $product_code = [];
         $product_name = [];
         $product_qty = [];
+        $product_price = [];
         $product_data = [];
+
         //retrieve data of product without variant
-        $lims_product_warehouse_data = Product_Warehouse::where('warehouse_id', $id)->whereNull('variant_id')->get();
+        $lims_product_warehouse_data = Product::join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
+        ->where([
+            ['products.is_active', true],
+            ['product_warehouse.warehouse_id', $id],
+        ])->whereNull('product_warehouse.variant_id')->select('product_warehouse.*')->get();
+
         foreach ($lims_product_warehouse_data as $product_warehouse) 
         {
             $product_qty[] = $product_warehouse->qty;
+            $product_price[] = $product_warehouse->price;
             $lims_product_data = Product::find($product_warehouse->product_id);
             $product_code[] =  $lims_product_data->code;
             $product_name[] = $lims_product_data->name;
@@ -243,7 +251,11 @@ class QuotationController extends Controller
             $qty_list[] = null;
         }
         //retrieve data of product with variant
-        $lims_product_warehouse_data = Product_Warehouse::where('warehouse_id', $id)->whereNotNull('variant_id')->get();
+        $lims_product_warehouse_data = Product::join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
+        ->where([
+            ['products.is_active', true],
+            ['product_warehouse.warehouse_id', $id],
+        ])->whereNotNull('product_warehouse.variant_id')->select('product_warehouse.*')->get();
         foreach ($lims_product_warehouse_data as $product_warehouse)
         {
             $product_qty[] = $product_warehouse->qty;
@@ -269,20 +281,21 @@ class QuotationController extends Controller
             $product_list[] = $product->product_list;
             $qty_list[] = $product->qty_list;
         }
-        $product_data = [$product_code, $product_name, $product_qty, $product_type, $product_id, $product_list, $qty_list];
+        $product_data = [$product_code, $product_name, $product_qty, $product_type, $product_id, $product_list, $qty_list, $product_price];
         return $product_data;
     }
 
     public function limsProductSearch(Request $request)
     {
         $todayDate = date('Y-m-d');
-        $product_code = explode(" ",$request['data']);
+        $product_code = explode("(", $request['data']);
+        $product_code[0] = rtrim($product_code[0], " ");
         $product_variant_id = null;
         $lims_product_data = Product::where('code', $product_code[0])->first();
         if(!$lims_product_data) {
             $lims_product_data = Product::join('product_variants', 'products.id', 'product_variants.product_id')
                 ->select('products.*', 'product_variants.id as product_variant_id', 'product_variants.item_code', 'product_variants.additional_price')
-                ->where('product_variants.item_code', $product_code)
+                ->where('product_variants.item_code', $product_code[0])
                 ->first();
             $product_variant_id = $lims_product_data->product_variant_id;
             $lims_product_data->code = $lims_product_data->item_code;
@@ -337,6 +350,7 @@ class QuotationController extends Controller
         }
         $product[] = $lims_product_data->id;
         $product[] = $product_variant_id;
+        $product[] = $lims_product_data->promotion;
         return $product;
     }
 

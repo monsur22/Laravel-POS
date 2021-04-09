@@ -580,6 +580,10 @@ class ReportController extends Controller
         $start_date = $data['start_date'];
         $end_date = $data['end_date'];
         $warehouse_id = $data['warehouse_id'];
+        $product_id = [];
+        $variant_id = [];
+        $product_name = [];
+        $product_qty = [];
         $lims_product_all = Product::select('id', 'name', 'qty', 'is_variant')->where('is_active', true)->get();
         foreach ($lims_product_all as $product) {
             $lims_product_purchase_data = null;
@@ -713,6 +717,10 @@ class ReportController extends Controller
         $start_date = $data['start_date'];
         $end_date = $data['end_date'];
         $warehouse_id = $data['warehouse_id'];
+        $product_id = [];
+        $variant_id = [];
+        $product_name = [];
+        $product_qty = [];
         $lims_product_all = Product::select('id', 'name', 'qty', 'is_variant')->where('is_active', true)->get();
         foreach ($lims_product_all as $product) {
             $lims_product_purchase_data = null;
@@ -784,8 +792,12 @@ class ReportController extends Controller
         $start_date = $data['start_date'];
         $end_date = $data['end_date'];
         $warehouse_id = $data['warehouse_id'];
-
+        $product_id = [];
+        $variant_id = [];
+        $product_name = [];
+        $product_qty = [];
         $lims_product_all = Product::select('id', 'name', 'qty', 'is_variant')->where('is_active', true)->get();
+        
         foreach ($lims_product_all as $product) {
             $lims_product_sale_data = null;
             $variant_id_all = [];

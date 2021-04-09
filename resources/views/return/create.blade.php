@@ -236,6 +236,39 @@
         </div>
     </div>
 </div>
+<!-- add cash register modal -->
+<div id="cash-register-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" class="modal fade text-left">
+    <div role="document" class="modal-dialog">
+      <div class="modal-content">
+        {!! Form::open(['route' => 'cashRegister.store', 'method' => 'post']) !!}
+        <div class="modal-header">
+          <h5 id="exampleModalLabel" class="modal-title">{{trans('file.Add Cash Register')}}</h5>
+          <button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true"><i class="dripicons-cross"></i></span></button>
+        </div>
+        <div class="modal-body">
+          <p class="italic"><small>{{trans('file.The field labels marked with * are required input fields')}}.</small></p>
+            <div class="row">
+              <div class="col-md-6 form-group warehouse-section">
+                  <label>{{trans('file.Warehouse')}} *</strong> </label>
+                  <select required name="warehouse_id" class="selectpicker form-control" data-live-search="true" data-live-search-style="begins" title="Select warehouse...">
+                      @foreach($lims_warehouse_list as $warehouse)
+                      <option value="{{$warehouse->id}}">{{$warehouse->name}}</option>
+                      @endforeach
+                  </select>
+              </div>
+              <div class="col-md-6 form-group">
+                  <label>{{trans('file.Cash in Hand')}} *</strong> </label>
+                  <input type="number" name="cash_in_hand" required class="form-control">
+              </div>
+              <div class="col-md-12 form-group">
+                  <button type="submit" class="btn btn-primary">{{trans('file.submit')}}</button>
+              </div>
+            </div>
+        </div>
+        {{ Form::close() }}
+      </div>
+    </div>
+</div>
 </section>
 <script type="text/javascript">
     $("ul#return").siblings('a').attr('aria-expanded','true');
@@ -259,6 +292,8 @@ var temp_unit_operation_value = [];
 var rowindex;
 var customer_group_rate;
 var row_product_price;
+var role_id = <?php echo json_encode(Auth::user()->role_id) ?>;
+var currency = <?php echo json_encode($currency) ?>;
 
 	$('.selectpicker').selectpicker({
 	    style: 'btn-link',
@@ -281,10 +316,12 @@ var row_product_price;
 	        product_name = data[1];
 	        product_qty = data[2];
             product_type = data[3];
+            product_warehouse_price = data[4];
 	        $.each(product_code, function(index) {
 	            lims_product_array.push(product_code[index] + ' (' + product_name[index] + ')');
 	        });
 	    });
+        isCashRegisterAvailable(id);
 	});
 
 	$('#lims_productcodeSearch').on('input', function(){
@@ -326,6 +363,10 @@ lims_productcodeSearch.autocomplete({
 //Change quantity
 $("#myTable").on('input', '.qty', function() {
     rowindex = $(this).closest('tr').index();
+    if($(this).val() < 1 && $(this).val() != '') {
+      $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val(1);
+      alert("Quantity can't be less than 1");
+    }
     calculateRowProductData($(this).val());
 });
 
@@ -377,6 +418,12 @@ $('button[name="update_btn"]').on("click", function() {
     if (parseFloat(edit_discount) > parseFloat(edit_unit_price)) {
         alert('Invalid Discount Input!');
         return;
+    }
+
+    if(edit_qty < 1) {
+        $('input[name="edit_qty"]').val(1);
+        edit_qty = 1;
+        alert("Quantity can't be less than 1");
     }
 
     var tax_rate_all = <?php echo json_encode($tax_rate_all) ?>;
@@ -433,6 +480,26 @@ $('select[name="order_tax_rate"]').on("change", function() {
     calculateGrandTotal();
 });
 
+function isCashRegisterAvailable(warehouse_id) {
+    $.ajax({
+        url: '../cash-register/check-availability/'+warehouse_id,
+        type: "GET",
+        success:function(data) {
+            if(data == 'false') {
+                $('#cash-register-modal select[name=warehouse_id]').val(warehouse_id);
+                $('.selectpicker').selectpicker('refresh');
+                if(role_id <= 2){
+                    $("#cash-register-modal .warehouse-section").removeClass('d-none');
+                }
+                else {
+                    $("#cash-register-modal .warehouse-section").addClass('d-none');
+                }
+                $("#cash-register-modal").modal('show');
+            }
+        }
+    });
+}
+
 function productSearch(data){
     $.ajax({
         type: 'GET',
@@ -476,7 +543,13 @@ function productSearch(data){
                 newRow.append(cols);
                 $("table.order-list tbody").append(newRow);
 
-                product_price.push(parseFloat(data[2]) + parseFloat(data[2] * customer_group_rate));
+                pos = product_code.indexOf(data[1]);
+                if(!data[11] && product_warehouse_price[pos]) {
+                    product_price.push(parseFloat(product_warehouse_price[pos] * currency['exchange_rate']) + parseFloat(product_warehouse_price[pos] * currency['exchange_rate'] * customer_group_rate));
+                }
+                else {
+                    product_price.push(parseFloat(data[2] * currency['exchange_rate']) + parseFloat(data[2] * currency['exchange_rate'] * customer_group_rate));
+                }
                 product_discount.push('0.00');
                 tax_rate.push(parseFloat(data[3]));
                 tax_name.push(data[4]);

@@ -489,6 +489,10 @@ var lims_product_code = [
 //Change quantity
 $("#myTable").on('input', '.qty', function() {
     rowindex = $(this).closest('tr').index();
+    if($(this).val() < 1 && $(this).val() != '') {
+      $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val(1);
+      alert("Quantity can't be less than 1");
+    }
     checkQuantity($(this).val(), true);
 });
 
@@ -551,6 +555,12 @@ $('button[name="update_btn"]').on("click", function() {
         return;
     }
 
+    if(edit_qty < 1) {
+        $('input[name="edit_qty"]').val(1);
+        edit_qty = 1;
+        alert("Quantity can't be less than 1");
+    }
+
     var row_unit_operator = unit_operator[rowindex].slice(0, unit_operator[rowindex].indexOf(","));
     var row_unit_operation_value = unit_operation_value[rowindex].slice(0, unit_operation_value[rowindex].indexOf(","));
     row_unit_operation_value = parseFloat(row_unit_operation_value);
@@ -600,6 +610,7 @@ function productSearch(data){
                     rowindex = i;
                     var qty = parseFloat($('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val()) + 1;
                     $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .qty').val(qty);
+                    $('table.order-list tbody tr:nth-child(' + (rowindex + 1) + ') .recieved').val(qty);
                     calculateRowProductData(qty);
                     flag = 0;
                 }

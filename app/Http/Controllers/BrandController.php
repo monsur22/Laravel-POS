@@ -34,7 +34,7 @@ class BrandController extends Controller
         $image = $request->image;
         if ($image) {
             $ext = pathinfo($image->getClientOriginalName(), PATHINFO_EXTENSION);
-            $imageName = preg_replace('/[^a-zA-Z0-9]/', '', $input['title']);
+            $imageName = date("Ymdhis");
             $imageName = $imageName . '.' . $ext;
             $image->move('public/images/brand', $imageName);
             $input['image'] = $imageName;
@@ -66,7 +66,7 @@ class BrandController extends Controller
         $image = $request->image;
         if ($image) {
             $ext = pathinfo($image->getClientOriginalName(), PATHINFO_EXTENSION);
-            $imageName = preg_replace('/[^a-zA-Z0-9]/', '', $request->title);
+            $imageName = date("Ymdhis");
             $imageName = $imageName . '.' . $ext;
             $image->move('public/images/brand', $imageName);
             $lims_brand_data->image = $imageName;
@@ -128,6 +128,7 @@ class BrandController extends Controller
     {
         $lims_brand_data = Brand::findOrFail($id);
         $lims_brand_data->is_active = false;
+        unlink('public/images/brand/'.$lims_brand_data->image);
         $lims_brand_data->save();
         return redirect('brand')->with('not_permitted', 'Brand deleted successfully!');
     }

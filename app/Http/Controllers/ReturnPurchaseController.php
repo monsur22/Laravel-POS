@@ -107,13 +107,14 @@ class ReturnPurchaseController extends Controller
     public function limsProductSearch(Request $request)
     {
         $todayDate = date('Y-m-d');
-        $product_code = explode(" ", $request['data']);
+        $product_code = explode("(", $request['data']);
+        $product_code[0] = rtrim($product_code[0], " ");
         $lims_product_data = Product::where('code', $product_code[0])->first();
         $product_variant_id = null;
         if(!$lims_product_data) {
             $lims_product_data = Product::join('product_variants', 'products.id', 'product_variants.product_id')
                 ->select('products.*', 'product_variants.id as product_variant_id', 'product_variants.item_code')
-                ->where('product_variants.item_code', $product_code)
+                ->where('product_variants.item_code', $product_code[0])
                 ->first();
             $lims_product_data->code = $lims_product_data->item_code;
             $product_variant_id = $lims_product_data->product_variant_id;

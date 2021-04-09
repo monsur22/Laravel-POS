@@ -48,7 +48,7 @@
                                 </li>
                                 @if(in_array("returns-edit", $all_permission))
                                 <li>
-                                    <a href="{{ route('return-sale.edit', ['id' => $return->id]) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a>
+                                    <a href="{{ route('return-sale.edit', $return->id) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a>
                                 </li>
                                 @endif
                                 <li class="divider"></li>

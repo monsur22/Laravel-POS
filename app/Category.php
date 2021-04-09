@@ -8,12 +8,11 @@ class Category extends Model
 {
     protected $fillable =[
 
-        "name", "parent_id", "is_active"
+        "name", 'image', "parent_id", "is_active"
     ];
 
     public function product()
     {
-    	return $this->hasMany('App/Product');
-    	
+    	return $this->hasMany('App\Product');
     }
 }

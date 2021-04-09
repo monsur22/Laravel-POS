@@ -50,7 +50,7 @@
                             </button>
                             <ul class="dropdown-menu edit-options dropdown-menu-right dropdown-default" user="menu">
                                 <li>
-                                    <a href="{{ route('qty_adjustment.edit', ['id' => $adjustment->id]) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a> 
+                                    <a href="{{ route('qty_adjustment.edit', $adjustment->id) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a> 
                                 </li>
                                 <li class="divider"></li>
                                 {{ Form::open(['route' => ['qty_adjustment.destroy', $adjustment->id], 'method' => 'DELETE'] ) }}

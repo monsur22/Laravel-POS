@@ -750,11 +750,11 @@
 						                    <div aria-checked="false" aria-disabled="false">
 						                    	<div class="checkbox">
 							                    	@if(in_array("account-statement", $all_permission))
-							                    	<input type="checkbox" value="1" id="account-statement" name="account-statement" checked>
+							                    	<input type="checkbox" value="1" id="account-statement-permission" name="account-statement" checked>
 							                    	@else
-							                    	<input type="checkbox" value="1" id="account-statement" name="account-statement">
+							                    	<input type="checkbox" value="1" id="account-statement-permission" name="account-statement">
 							                    	@endif
-								                    <label for="account-statement" class="padding05">{{trans('file.Account Statement')}} &nbsp;&nbsp;</label>
+								                    <label for="account-statement-permission" class="padding05">{{trans('file.Account Statement')}} &nbsp;&nbsp;</label>
 								                </div>
 								            </div>
 						                </span>
@@ -1028,6 +1028,18 @@
 						            	<span>
 						                    <div aria-checked="false" aria-disabled="false">
 								                <div class="checkbox">
+							                    	@if(in_array("send_notification", $all_permission))
+							                    	<input type="checkbox" value="1" id="send_notification" name="send_notification" checked>
+							                    	@else
+							                    	<input type="checkbox" value="1" id="send_notification" name="send_notification">
+							                    	@endif
+								                    <label for="send_notification" class="padding05">{{trans('file.Send Notification')}} &nbsp;&nbsp;</label>
+								                </div>
+								            </div>
+						                </span>
+						            	<span>
+						                    <div aria-checked="false" aria-disabled="false">
+								                <div class="checkbox">
 							                    	@if(in_array("warehouse", $all_permission))
 							                    	<input type="checkbox" value="1" id="warehouse" name="warehouse" checked>
 							                    	@else
@@ -1076,12 +1088,36 @@
 						                <span>
 								            <div aria-checked="false" aria-disabled="false">
 								                <div class="checkbox">
+							                    	@if(in_array("currency", $all_permission))
+							                    	<input type="checkbox" value="1" id="currency" name="currency" checked>
+							                    	@else
+							                    	<input type="checkbox" value="1" id="currency" name="currency">
+							                    	@endif
+								                    <label for="currency" class="padding05">{{trans('file.Currency')}} &nbsp;&nbsp;</label>
+								                </div>
+								            </div>
+						                </span>
+						                <span>
+								            <div aria-checked="false" aria-disabled="false">
+								                <div class="checkbox">
 							                    	@if(in_array("tax", $all_permission))
 							                    	<input type="checkbox" value="1" id="tax" name="tax" checked>
 							                    	@else
 							                    	<input type="checkbox" value="1" id="tax" name="tax">
 							                    	@endif
 								                    <label for="tax" class="padding05">{{trans('file.Tax')}} &nbsp;&nbsp;</label>
+								                </div>
+								            </div>
+						                </span>
+						                <span>
+						                    <div aria-checked="false" aria-disabled="false">
+								                <div class="checkbox">
+							                    	@if(in_array("backup_database", $all_permission))
+							                    	<input type="checkbox" value="1" id="backup_database" name="backup_database" checked>
+							                    	@else
+							                    	<input type="checkbox" value="1" id="backup_database" name="backup_database">
+							                    	@endif
+								                    <label for="backup_database" class="padding05">{{trans('file.Backup Database')}} &nbsp;&nbsp;</label>
 								                </div>
 								            </div>
 						                </span>
@@ -1163,6 +1199,30 @@
 						            <td>{{trans('file.Miscellaneous')}}</td>
 						            <td class="report-permissions" colspan="5">
 						            	<span>
+								            <div aria-checked="false" aria-disabled="false">
+								                <div class="checkbox">
+							                    	@if(in_array("category", $all_permission))
+							                    	<input type="checkbox" value="1" id="category" name="category" checked>
+							                    	@else
+							                    	<input type="checkbox" value="1" id="category" name="category">
+							                    	@endif
+								                    <label for="category" class="padding05">{{trans('file.category')}} &nbsp;&nbsp;</label>
+								                </div>
+								            </div>
+						            	</span>
+						            	<span>
+						            		<div aria-checked="false" aria-disabled="false">
+								                <div class="checkbox">
+							                    	@if(in_array("delivery", $all_permission))
+							                    	<input type="checkbox" value="1" id="delivery" name="delivery" checked>
+							                    	@else
+							                    	<input type="checkbox" value="1" id="delivery" name="delivery">
+							                    	@endif
+								                    <label for="delivery" class="padding05">{{trans('file.Delivery')}} &nbsp;&nbsp;</label>
+								                </div>
+								            </div>
+						            	</span>
+						            	<span>
 						                    <div aria-checked="false" aria-disabled="false">
 								                <div class="checkbox">
 							                    	@if(in_array("stock_count", $all_permission))
@@ -1231,6 +1291,30 @@
 							                    	<input type="checkbox" value="1" id="empty_database" name="empty_database">
 							                    	@endif
 								                    <label for="empty_database" class="padding05">{{trans('file.Empty Database')}} &nbsp;&nbsp;</label>
+								                </div>
+								            </div>
+						                </span>
+						                <span>
+						                    <div aria-checked="false" aria-disabled="false">
+								                <div class="checkbox">
+							                    	@if(in_array("today_sale", $all_permission))
+							                    	<input type="checkbox" value="1" id="today_sale" name="today_sale" checked>
+							                    	@else
+							                    	<input type="checkbox" value="1" id="today_sale" name="today_sale">
+							                    	@endif
+								                    <label for="today_sale" class="padding05">{{trans('file.Today Sale')}} &nbsp;&nbsp;</label>
+								                </div>
+								            </div>
+						                </span>
+						                <span>
+						                    <div aria-checked="false" aria-disabled="false">
+								                <div class="checkbox">
+							                    	@if(in_array("today_profit", $all_permission))
+							                    	<input type="checkbox" value="1" id="today_profit" name="today_profit" checked>
+							                    	@else
+							                    	<input type="checkbox" value="1" id="today_profit" name="today_profit">
+							                    	@endif
+								                    <label for="today_profit" class="padding05">{{trans('file.Today Profit')}} &nbsp;&nbsp;</label>
 								                </div>
 								            </div>
 						                </span>

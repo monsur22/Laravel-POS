@@ -7,6 +7,8 @@ use App\User;
 use App\Roles;
 use App\Biller;
 use App\Warehouse;
+use App\CustomerGroup;
+use App\Customer;
 use Auth;
 use Hash;
 use Keygen;
@@ -40,7 +42,8 @@ class UserController extends Controller
             $lims_role_list = Roles::where('is_active', true)->get();
             $lims_biller_list = Biller::where('is_active', true)->get();
             $lims_warehouse_list = Warehouse::where('is_active', true)->get();
-            return view('user.create', compact('lims_role_list', 'lims_biller_list', 'lims_warehouse_list'));
+            $lims_customer_group_list = CustomerGroup::where('is_active', true)->get();
+            return view('user.create', compact('lims_role_list', 'lims_biller_list', 'lims_warehouse_list', 'lims_customer_group_list'));
         }
         else
             return redirect()->back()->with('not_permitted', 'Sorry! You are not allowed to access this module');
@@ -69,10 +72,21 @@ class UserController extends Controller
                 }),
             ],
         ]);
+        
+        if($request->role_id == 5) {
+            $this->validate($request, [
+                'phone_number' => [
+                    'max:255',
+                        Rule::unique('customers')->where(function ($query) {
+                        return $query->where('is_active', 1);
+                    }),
+                ],
+            ]);
+        }
 
         $data = $request->all();
         $message = 'User created successfully';
-        try{
+        try {
             Mail::send( 'mail.user_details', $data, function( $message ) use ($data)
             {
                 $message->to( $data['email'] )->subject( 'User Account Details' );
@@ -85,7 +99,14 @@ class UserController extends Controller
             $data['is_active'] = false;
         $data['is_deleted'] = false;
         $data['password'] = bcrypt($data['password']);
+        $data['phone'] = $data['phone_number'];
         User::create($data);
+        if($data['role_id'] == 5) {
+            $data['name'] = $data['customer_name'];
+            $data['phone_number'] = $data['phone'];
+            $data['is_active'] = true;
+            Customer::create($data);
+        }
         return redirect('user')->with('message1', $message); 
     }
 

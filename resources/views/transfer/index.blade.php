@@ -65,7 +65,7 @@
                                 </li>
                                 @if(in_array("transfers-edit", $all_permission))
                                 <li>
-                                    <a href="{{ route('transfers.edit', ['id' => $transfer->id]) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a> 
+                                    <a href="{{ route('transfers.edit', $transfer->id) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a> 
                                 </li>
                                 @endif
                                 <li class="divider"></li>
@@ -314,10 +314,10 @@
         }
     }
 
-    function transferDetails(transfer){
+    function transferDetails(transfer) {
         var htmltext = '<strong>{{trans("file.Date")}}: </strong>'+transfer[0]+'<br><strong>{{trans("file.reference")}}: </strong>'+transfer[1]+'<br><strong> {{trans("file.Transfer")}} {{trans("file.Status")}}: </strong>'+transfer[2]+'<br><br><div class="row"><div class="col-md-6"><strong>{{trans("file.From")}}:</strong><br>'+transfer[4]+'<br>'+transfer[5]+'<br>'+transfer[6]+'</div><div class="col-md-6"><div class="float-right"><strong>{{trans("file.To")}}:</strong><br>'+transfer[7]+'<br>'+transfer[8]+'<br>'+transfer[9]+'</div></div></div>';
 
-        $.get('transfers/product_transfer/' + transfer[3], function(data){
+        $.get('transfers/product_transfer/' + transfer[3], function(data) {
             $(".product-transfer-list tbody").remove();
             var name_code = data[0];
             var qty = data[1];
@@ -326,7 +326,7 @@
             var tax_rate = data[4];
             var subtotal = data[5];
             var newBody = $("<tbody>");
-            $.each(name_code, function(index){
+            $.each(name_code, function(index) {
                 var newRow = $("<tr>");
                 var cols = '';
                 cols += '<td><strong>' + (index+1) + '</strong></td>';

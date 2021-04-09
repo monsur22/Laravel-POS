@@ -155,7 +155,7 @@ class ProductController extends Controller
                             </li>';
                 if(in_array("products-edit", $request['all_permission']))
                     $nestedData['options'] .= '<li>
-                            <a href="'.route('products.edit', ['id' => $product->id]).'" class="btn btn-link"><i class="fa fa-edit"></i> '.trans('file.edit').'</a>
+                            <a href="'.route('products.edit', $product->id).'" class="btn btn-link"><i class="fa fa-edit"></i> '.trans('file.edit').'</a>
                         </li>';
                 if(in_array("products-delete", $request['all_permission']))
                     $nestedData['options'] .= \Form::open(["route" => ["products.destroy", $product->id], "method" => "DELETE"] ).'
@@ -200,7 +200,8 @@ class ProductController extends Controller
             $lims_category_list = Category::where('is_active', true)->get();
             $lims_unit_list = Unit::where('is_active', true)->get();
             $lims_tax_list = Tax::where('is_active', true)->get();
-            return view('product.create',compact('lims_product_list', 'lims_brand_list', 'lims_category_list', 'lims_unit_list', 'lims_tax_list'));
+            $lims_warehouse_list = Warehouse::where('is_active', true)->get();
+            return view('product.create',compact('lims_product_list', 'lims_brand_list', 'lims_category_list', 'lims_unit_list', 'lims_tax_list', 'lims_warehouse_list'));
         }
         else
             return redirect()->back()->with('not_permitted', 'Sorry! You are not allowed to access this module');
@@ -223,6 +224,7 @@ class ProductController extends Controller
             ]
         ]);
         $data = $request->except('image', 'file');
+        $data['name'] = htmlspecialchars($data['name']);
         if($data['type'] == 'combo'){
             $data['product_list'] = implode(",", $data['product_id']);
             $data['qty_list'] = implode(",", $data['product_qty']);
@@ -277,6 +279,18 @@ class ProductController extends Controller
                 $lims_product_variant_data->save();
             }
         }
+        if(isset($data['is_diffPrice'])) {
+            foreach ($data['diff_price'] as $key => $diff_price) {
+                if($diff_price) {
+                    Product_Warehouse::create([
+                        "product_id" => $lims_product_data->id,
+                        "warehouse_id" => $data["warehouse_id"][$key],
+                        "qty" => 0,
+                        "price" => $diff_price
+                    ]);
+                }
+            }
+        }
         \Session::flash('create_message', 'Product created successfully');
     }
 
@@ -291,9 +305,9 @@ class ProductController extends Controller
             $lims_tax_list = Tax::where('is_active', true)->get();
             $lims_product_data = Product::where('id', $id)->first();
             $lims_product_variant_data = $lims_product_data->variant()->orderBy('position')->get();
-            //return dd($lims_product_variant_data);
+            $lims_warehouse_list = Warehouse::where('is_active', true)->get();
 
-            return view('product.edit',compact('lims_product_list', 'lims_brand_list', 'lims_category_list', 'lims_unit_list', 'lims_tax_list', 'lims_product_data', 'lims_product_variant_data'));
+            return view('product.edit',compact('lims_product_list', 'lims_brand_list', 'lims_category_list', 'lims_unit_list', 'lims_tax_list', 'lims_product_data', 'lims_product_variant_data', 'lims_warehouse_list'));
         }
         else
             return redirect()->back()->with('not_permitted', 'Sorry! You are not allowed to access this module');
@@ -320,9 +334,10 @@ class ProductController extends Controller
                     }),
                 ]
             ]);
-            $data = $request->except('image', 'file');
+            
             $lims_product_data = Product::findOrFail($request->input('id'));
-            $data = $request->except('image', 'file');
+            $data = $request->except('image', 'file', 'prev_img');
+            $data['name'] = htmlspecialchars($data['name']);
 
             if($data['type'] == 'combo') {
                 $data['product_list'] = implode(",", $data['product_id']);
@@ -332,8 +347,12 @@ class ProductController extends Controller
             }
             elseif($data['type'] == 'digital')
                 $data['cost'] = $data['unit_id'] = $data['purchase_unit_id'] = $data['sale_unit_id'] = 0;
+
             if(!isset($data['featured']))
                 $data['featured'] = 0;
+
+            if(!isset($data['promotion']))
+                $data['promotion'] = null;
 
             $data['product_details'] = str_replace('"', '@', $data['product_details']);
             $data['product_details'] = $data['product_details'];
@@ -341,6 +360,13 @@ class ProductController extends Controller
                 $data['starting_date'] = date('Y-m-d', strtotime($data['starting_date']));
             if($data['last_date'])
                 $data['last_date'] = date('Y-m-d', strtotime($data['last_date']));
+
+            //dealing with previous images
+            if($request->prev_img) {
+                $lims_product_data->image = implode(",", $request->prev_img);
+                $lims_product_data->save();
+            }
+            //dealing with new images
             $images = $request->image;
             $image_names = [];
             if($images) {            
@@ -368,7 +394,7 @@ class ProductController extends Controller
                 $file->move('public/product/files', $fileName);
                 $data['file'] = $fileName;
             }
-            $lims_product_data->update($data);
+
             $lims_product_variant_data = ProductVariant::where('product_id', $request->input('id'))->select('id', 'variant_id')->get();
             foreach ($lims_product_variant_data as $key => $value) {
                 if (!in_array($value->variant_id, $data['variant_id'])) {
@@ -380,12 +406,15 @@ class ProductController extends Controller
                 foreach ($data['variant_name'] as $key => $variant_name) {
                     if($data['product_variant_id'][$key] == 0) {
                         $lims_variant_data = Variant::firstOrCreate(['name' => $data['variant_name'][$key]]);
-                        $lims_product_variant_data = new ProductVariant;                
+                        $lims_product_variant_data = new ProductVariant();
+
                         $lims_product_variant_data->product_id = $lims_product_data->id;
                         $lims_product_variant_data->variant_id = $lims_variant_data->id;
+
                         $lims_product_variant_data->position = $key + 1;
                         $lims_product_variant_data->item_code = $data['item_code'][$key];
                         $lims_product_variant_data->additional_price = $data['additional_price'][$key];
+                        $lims_product_variant_data->qty = 0;
                         $lims_product_variant_data->save();
                     }
                     else {
@@ -398,6 +427,36 @@ class ProductController extends Controller
                     }
                 }
             }
+            if(isset($data['is_diffPrice'])) {
+                foreach ($data['diff_price'] as $key => $diff_price) {
+                    if($diff_price) {
+                        $lims_product_warehouse_data = Product_Warehouse::FindProductWithoutVariant($lims_product_data->id, $data['warehouse_id'][$key])->first();
+                        if($lims_product_warehouse_data) {
+                            $lims_product_warehouse_data->price = $diff_price;
+                            $lims_product_warehouse_data->save();
+                        }
+                        else {
+                            Product_Warehouse::create([
+                                "product_id" => $lims_product_data->id,
+                                "warehouse_id" => $data["warehouse_id"][$key],
+                                "qty" => 0,
+                                "price" => $diff_price
+                            ]);
+                        }
+                    }
+                }
+            }
+            else {
+                $data['is_diffPrice'] = false;
+                foreach ($data['warehouse_id'] as $key => $warehouse_id) {
+                    $lims_product_warehouse_data = Product_Warehouse::FindProductWithoutVariant($lims_product_data->id, $warehouse_id)->first();
+                    if($lims_product_warehouse_data) {
+                        $lims_product_warehouse_data->price = null;
+                        $lims_product_warehouse_data->save();
+                    }
+                }
+            }
+            $lims_product_data->update($data);
             \Session::flash('edit_message', 'Product updated successfully');
         }
     }
@@ -452,7 +511,6 @@ class ProductController extends Controller
                 $warehouse_name[] = $lims_warehouse_data->name;
                 $variant_name[] = $lims_variant_data->name;
                 $variant_qty[] = $product_variant_warehouse_data->qty;
-                
             }
         }
         else{
@@ -484,9 +542,10 @@ class ProductController extends Controller
         $product[] = $lims_product_data->name;
         $product[] = $lims_product_data->code;
         $product[] = $lims_product_data->price;
-
         $product[] = DNS1D::getBarcodePNG($lims_product_data->code, $lims_product_data->barcode_symbology);
         $product[] = $lims_product_data->promotion_price;
+        $product[] = config('currency');
+        $product[] = config('currency_position');
         return $product;
     }
 
@@ -532,12 +591,15 @@ class ProductController extends Controller
            $lims_category_data = Category::firstOrCreate(['name' => $data['category'], 'is_active' => true]);
 
            $lims_unit_data = Unit::where('unit_code', $data['unitcode'])->first();
+           if(!$lims_unit_data)
+                return redirect()->back()->with('not_permitted', 'Unit code does not exist in the database.');
 
            $product = Product::firstOrNew([ 'name'=>$data['name'], 'is_active'=>true ]);
             if($data['image'])
                 $product->image = $data['image'];
             else
                 $product->image = 'zummXD2dvAtI.png';
+
            $product->name = $data['name'];
            $product->code = $data['code'];
            $product->type = strtolower($data['type']);
@@ -554,6 +616,36 @@ class ProductController extends Controller
            $product->product_details = $data['productdetails'];
            $product->is_active = true;
            $product->save();
+
+            if($data['variantname']) {
+                //dealing with variants
+                $variant_names = explode(",", $data['variantname']);
+                $item_codes = explode(",", $data['itemcode']);
+                $additional_prices = explode(",", $data['additionalprice']);
+                foreach ($variant_names as $key => $variant_name) {
+                    $variant = Variant::firstOrCreate(['name' => $variant_name]);
+                    if($data['itemcode'])
+                        $item_code = $item_codes[$key];
+                    else
+                        $item_code = $variant_name . '-' . $data['code'];
+                    
+                    if($data['additionalprice'])
+                        $additional_price = $additional_prices[$key];
+                    else
+                        $additional_price = 0;
+
+                    ProductVariant::create([
+                        'product_id' => $product->id,
+                        'variant_id' => $variant->id,
+                        'position' => $key + 1,
+                        'item_code' => $item_code,
+                        'additional_price' => $additional_price,
+                        'qty' => 0
+                    ]);
+                }
+                $product->is_variant = true;
+                $product->save();
+            }
          }
          return redirect('products')->with('import_message', 'Product imported successfully');
     }
@@ -573,12 +665,12 @@ class ProductController extends Controller
     {
         $lims_product_data = Product::findOrFail($id);
         $lims_product_data->is_active = false;
-        if($lims_product_data->image != 'zummXD2dvAtI.png') {
+        /*if($lims_product_data->image != 'zummXD2dvAtI.png') {
             $images = explode(",", $lims_product_data->image);
             foreach ($images as $key => $image) {
                 unlink('public/images/product/'.$image);
             }
-        }
+        }*/
         $lims_product_data->save();
         return redirect('products')->with('message', 'Product deleted successfully');
     }

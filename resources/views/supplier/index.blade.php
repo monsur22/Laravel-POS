@@ -56,7 +56,7 @@
                             <ul class="dropdown-menu edit-options dropdown-menu-right dropdown-default" user="menu">
                                 @if(in_array("suppliers-edit", $all_permission))
                                 <li>
-                                	<a href="{{ route('supplier.edit', ['id' => $supplier->id]) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a>
+                                	<a href="{{ route('supplier.edit', $supplier->id) }}" class="btn btn-link"><i class="dripicons-document-edit"></i> {{trans('file.edit')}}</a>
                                 </li>
                                 @endif
                                 <li class="divider"></li>

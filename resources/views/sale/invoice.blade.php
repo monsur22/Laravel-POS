@@ -103,8 +103,9 @@
         </p>
         <table>
             <tbody>
+                <?php $total_product_tax = 0;?>
                 @foreach($lims_product_sale_data as $product_sale_data)
-                @php 
+                <?php 
                     $lims_product_data = \App\Product::find($product_sale_data->product_id);
                     if($product_sale_data->variant_id) {
                         $variant_data = \App\Variant::find($product_sale_data->variant_id);
@@ -112,8 +113,17 @@
                     }
                     else
                         $product_name = $lims_product_data->name;
-                @endphp
-                <tr><td colspan="2">{{$product_name}}<br>{{$product_sale_data->qty}} x {{number_format((float)($product_sale_data->total / $product_sale_data->qty), 2, '.', '')}}</td>
+                ?>
+                <tr>
+                    <td colspan="2">
+                        {{$product_name}}
+                        <br>{{$product_sale_data->qty}} x {{number_format((float)($product_sale_data->total / $product_sale_data->qty), 2, '.', '')}}
+
+                        @if($product_sale_data->tax_rate)
+                            <?php $total_product_tax += $product_sale_data->tax ?>
+                            [{{trans('file.Tax')}} ({{$product_sale_data->tax_rate}}%): {{$product_sale_data->tax}}]
+                        @endif
+                    </td>
                     <td style="text-align:right;vertical-align:bottom">{{number_format((float)$product_sale_data->total, 2, '.', '')}}</td>
                 </tr>
                 @endforeach
@@ -123,6 +133,21 @@
                     <th colspan="2">{{trans('file.Total')}}</th>
                     <th style="text-align:right">{{number_format((float)$lims_sale_data->total_price, 2, '.', '')}}</th>
                 </tr>
+                @if($general_setting->invoice_format == 'gst' && $general_setting->state == 1)
+                <tr>
+                    <td colspan="2">IGST</td>
+                    <td style="text-align:right">{{number_format((float)$total_product_tax, 2, '.', '')}}</td>
+                </tr>
+                @elseif($general_setting->invoice_format == 'gst' && $general_setting->state == 2)
+                <tr>
+                    <td colspan="2">SGST</td>
+                    <td style="text-align:right">{{number_format((float)($total_product_tax / 2), 2, '.', '')}}</td>
+                </tr>
+                <tr>
+                    <td colspan="2">CGST</td>
+                    <td style="text-align:right">{{number_format((float)($total_product_tax / 2), 2, '.', '')}}</td>
+                </tr>
+                @endif
                 @if($lims_sale_data->order_tax)
                 <tr>
                     <th colspan="2">{{trans('file.Order Tax')}}</th>
@@ -153,9 +178,9 @@
                 </tr>
                 <tr>
                     @if($general_setting->currency_position == 'prefix')
-                    <th class="centered" colspan="3">{{trans('file.In Words')}}: <span>{{$general_setting->currency}}</span> <span>{{str_replace("-"," ",$numberInWords)}}</span></th>
+                    <th class="centered" colspan="3">{{trans('file.In Words')}}: <span>{{$currency->code}}</span> <span>{{str_replace("-"," ",$numberInWords)}}</span></th>
                     @else
-                    <th class="centered" colspan="3">{{trans('file.In Words')}}: <span>{{str_replace("-"," ",$numberInWords)}}</span> <span>{{$general_setting->currency}}</span></th>
+                    <th class="centered" colspan="3">{{trans('file.In Words')}}: <span>{{str_replace("-"," ",$numberInWords)}}</span> <span>{{$currency->code}}</span></th>
                     @endif
                 </tr>
             </tfoot>
@@ -167,9 +192,16 @@
                     <td style="padding: 5px;width:30%">{{trans('file.Paid By')}}: {{$payment_data->paying_method}}</td>
                     <td style="padding: 5px;width:40%">{{trans('file.Amount')}}: {{number_format((float)$payment_data->amount, 2, '.', '')}}</td>
                     <td style="padding: 5px;width:30%">{{trans('file.Change')}}: {{number_format((float)$payment_data->change, 2, '.', '')}}</td>
-                </tr>
-                <tr><td class="centered" colspan="3">{{trans('file.Thank you for shopping with us. Please come again')}}</td></tr>
+                </tr>                
                 @endforeach
+                <tr><td class="centered" colspan="3">{{trans('file.Thank you for shopping with us. Please come again')}}</td></tr>
+                <tr>
+                    <td class="centered" colspan="3">
+                    <?php echo '<img style="margin-top:10px;" src="data:image/png;base64,' . DNS1D::getBarcodePNG($lims_sale_data->reference_no, 'C128') . '" width="300" alt="barcode"   />';?>
+                    <br>
+                    <?php echo '<img style="margin-top:10px;" src="data:image/png;base64,' . DNS2D::getBarcodePNG($lims_sale_data->reference_no, 'QRCODE') . '" alt="barcode"   />';?>    
+                    </td>
+                </tr>
             </tbody>
         </table>
         <!-- <div class="centered" style="margin:30px 0 50px">

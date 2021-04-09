@@ -53,7 +53,7 @@
         </div>
         <div class="modal-body">
           <p class="italic"><small>{{trans('file.The field labels marked with * are required input fields')}}.</small></p>
-           <p>{{trans('file.The correct column order is')}} (image, name*, code*, type*, brand, category*, unit_code*, cost*, price*, product_details) {{trans('file.and you must follow this')}}.</p>
+           <p>{{trans('file.The correct column order is')}} (image, name*, code*, type*, brand, category*, unit_code*, cost*, price*, product_details, variant_name, item_code, additional_price) {{trans('file.and you must follow this')}}.</p>
            <p>{{trans('file.To display Image it must be stored in')}} public/images/product {{trans('file.directory')}}. {{trans('file.Image name must be same as product name')}}</p>
            <div class="row">
                 <div class="col-md-6">
@@ -91,11 +91,11 @@
                 <div class="col-md-5 mt-2" id="product-warehouse-section">
                     <h5>{{trans('file.Warehouse Quantity')}}</h5>
                     <table class="table table-bordered table-hover product-warehouse-list">
-                    <thead>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
+                        <thead>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
                 </div>
                 <div class="col-md-7 mt-2" id="product-variant-warehouse-section">
                     <h5>{{trans('file.Warehouse quantity of product variants')}}</h5>
